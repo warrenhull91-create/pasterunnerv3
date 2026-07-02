@@ -1,12 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Paste Runner" />
   <title>Paste Runner V3</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Paste Runner V3</h1>
-  <p>App setup started.</p>
+  <header class="app-header">
+    <div>
+      <h1>Paste Runner Sheet</h1>
+      <p>Doherty Corp · V3</p>
+    </div>
+    <button id="testBtn" class="btn ghost">Send Test</button>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <h2>Shift Details</h2>
+      <div class="grid">
+        <label>Date <input id="shift_date" type="date"></label>
+        <label>Shift
+          <select id="shift_type">
+            <option value="D/S">D/S</option>
+            <option value="N/S">N/S</option>
+          </select>
+        </label>
+        <label>Operator <input id="operator" type="text" placeholder="Operator name"></label>
+        <label>Shift Boss <input id="shift_boss" type="text"></label>
+        <label>Plant Operator <input id="plant_operator" type="text"></label>
+        <label>Paste Runner <input id="paste_runner" type="text"></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Stopes</h2>
+      <div class="stope-grid">
+        <div class="stope">
+          <h3>Stope 1</h3>
+          <input id="stope_1_id" placeholder="Stope ID">
+          <input id="stope_1_status" placeholder="Status">
+          <input id="stope_1_total" placeholder="Total m³">
+        </div>
+        <div class="stope">
+          <h3>Stope 2</h3>
+          <input id="stope_2_id" placeholder="Stope ID">
+          <input id="stope_2_status" placeholder="Status">
+          <input id="stope_2_total" placeholder="Total m³">
+        </div>
+        <div class="stope">
+          <h3>Stope 3</h3>
+          <input id="stope_3_id" placeholder="Stope ID">
+          <input id="stope_3_status" placeholder="Status">
+          <input id="stope_3_total" placeholder="Total m³">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Times & Notes</h2>
+      <div class="grid">
+        <label>Started Pouring <input id="started_pouring" type="time"></label>
+        <label>Finished Pouring <input id="finished_pouring" type="time"></label>
+      </div>
+      <label>Comments <textarea id="comments" placeholder="Shift comments"></textarea></label>
+    </section>
+
+    <section class="submit-card">
+      <button id="submitBtn" class="btn primary">Submit Shift Sheet</button>
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
