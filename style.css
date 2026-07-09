@@ -410,3 +410,235 @@ textarea{
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
+
+/* ============================================================
+   HIDDEN PDF TEMPLATE STYLES
+   Captured by html2canvas + rendered into the PDF via jsPDF.
+   Deliberately print-friendly (light body, dark header) rather
+   than matching the app's dark theme 1:1 — a mostly-black PDF
+   is expensive to print and hard to read underground.
+   ============================================================ */
+
+#pdfTemplateWrapper{
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.pdf-page{
+  width: 794px; /* A4 @ 96dpi */
+  background: #ffffff;
+  color: #1b1e22;
+  font-family: Arial, Helvetica, sans-serif;
+  padding-bottom: 30px;
+}
+
+.pdf-header{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  background: linear-gradient(180deg, #1a1e23 0%, #0b0d0f 100%);
+  padding: 26px 32px;
+  border-bottom: 6px solid #ffcc00;
+}
+
+.pdf-logo{
+  height: 56px;
+  width: auto;
+  display:block;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.pdf-header-text h1{
+  margin:0;
+  color:#ffffff;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.pdf-header-text p{
+  margin: 6px 0 0;
+  color:#c3cbd1;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.pdf-meta-bar{
+  display:flex;
+  background:#f0f1f2;
+  border-bottom: 2px solid #dcdfe2;
+}
+.pdf-meta-bar > div{
+  flex:1;
+  padding: 14px 24px;
+  border-right: 1px solid #dcdfe2;
+}
+.pdf-meta-bar > div:last-child{ border-right:none; }
+.pdf-meta-bar span{
+  display:block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color:#6b7680;
+  margin-bottom: 4px;
+}
+.pdf-meta-bar strong{
+  font-size: 17px;
+  color:#121519;
+}
+
+.pdf-section{
+  padding: 22px 32px 4px;
+}
+
+.pdf-section-title{
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color:#121519;
+  border-left: 5px solid #ffcc00;
+  padding-left: 10px;
+  margin: 0 0 14px;
+  font-weight: 800;
+}
+
+.pdf-table{
+  width:100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.pdf-table td{
+  border: 1px solid #dcdfe2;
+  padding: 9px 12px;
+  vertical-align: top;
+  color:#1b1e22;
+}
+.pdf-table td.label{
+  background:#f5f6f7;
+  font-weight:700;
+  width: 20%;
+  color:#4a535c;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.pdf-stope-card{
+  border: 1.5px solid #22272d;
+  border-radius: 6px;
+  margin: 0 0 20px;
+  overflow: hidden;
+}
+
+.pdf-stope-head{
+  background: #22272d;
+  color:#fff;
+  padding: 10px 16px;
+}
+.pdf-stope-head h3{
+  margin:0;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.pdf-quick-row{
+  display:flex;
+  background:#fafafa;
+  border-bottom: 1px solid #e2e5e8;
+}
+.pdf-quick-row > div{
+  flex:1;
+  padding: 8px 16px;
+  border-right: 1px solid #e2e5e8;
+}
+.pdf-quick-row > div:last-child{ border-right:none; }
+.pdf-quick-row span{
+  display:block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color:#8b939b;
+}
+.pdf-quick-row strong{
+  font-size: 13px;
+  color:#1b1e22;
+}
+
+.pdf-checklist{
+  padding: 14px 16px 2px;
+}
+
+.pdf-checklist-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+}
+
+.pdf-field{
+  border-bottom: 1px dotted #dcdfe2;
+  padding-bottom: 7px;
+}
+.pdf-field span{
+  display:block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color:#8b939b;
+  margin-bottom: 3px;
+}
+.pdf-field strong{
+  font-size: 12px;
+  color:#1b1e22;
+}
+
+.pdf-pill{
+  display:inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pill-ok{ background:#e4f8ee; color:#1c8a56; border:1px solid #b6e9cd; }
+.pill-warn{ background:#fdeceb; color:#c23b2f; border:1px solid #f4bcb6; }
+.pill-na{ background:#eef0f2; color:#6b7680; border:1px solid #dcdfe2; }
+.pill-info{ background:#fff8dd; color:#8a6d00; border:1px solid #f0dd8f; }
+
+.pdf-comments-inline{
+  padding: 10px 16px 16px;
+  font-size: 12px;
+  color:#333;
+  white-space: pre-wrap;
+}
+
+.pdf-comments-box{
+  border: 1px solid #dcdfe2;
+  border-radius: 6px;
+  padding: 14px 16px;
+  min-height: 60px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  color:#333;
+  margin-bottom: 20px;
+}
+
+.pdf-footer{
+  margin: 10px 32px 0;
+  padding-top: 14px;
+  border-top: 1px solid #dcdfe2;
+  font-size: 9px;
+  color:#8b939b;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
