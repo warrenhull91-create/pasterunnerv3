@@ -40,274 +40,397 @@
     <section class="card">
       <h2>Stopes</h2>
       <div class="stope-grid">
-        <div class="stope">
-          <h3>Stope 1</h3>
-          <input id="stope_1_id" placeholder="Stope ID">
-          <input id="stope_1_status" placeholder="Status">
-          <input id="stope_1_total" placeholder="Total m³">
+        <div class="stope-card">
+          <!-- legacy fields kept as hidden inputs for backward compatibility with
+               existing submission/PDF/email logic — no longer shown in the UI -->
+          <input type="hidden" id="stope_1_id" value="">
+          <input type="hidden" id="stope_1_status" value="">
+          <input type="hidden" id="stope_1_total" value="">
 
-          <div class="stope-divider">Checks &amp; Details</div>
-          <div class="stope-fields">
-            <label>Stope ID <input id="stope1_id" type="text" placeholder="Stope ID"></label>
-            <label>Status
-              <select id="stope1_status">
-              <option value="">Select…</option>
-              <option value="Complete">Complete</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Stopped">Stopped</option>
-              <option value="Not Started">Not Started</option>
-              </select>
+          <div class="stope-card-header">
+            <h3>Stope 1</h3>
+            <label class="stope-id-inline">Stope ID
+              <input id="stope1_id" type="text" placeholder="e.g. S1-450">
             </label>
+          </div>
+
+          <div class="status-group-label">Stope Status</div>
+          <div class="status-btn-group" role="group" aria-label="Stope 1 status">
+            <button type="button" class="status-btn" data-stope="1" data-value="Pouring">
+              <span class="status-dot dot-pouring"></span>POURING
+            </button>
+            <button type="button" class="status-btn" data-stope="1" data-value="Stope Full">
+              <span class="status-dot dot-full"></span>STOPE FULL
+            </button>
+            <button type="button" class="status-btn" data-stope="1" data-value="Plug Curing">
+              <span class="status-dot dot-curing"></span>PLUG CURING
+            </button>
+            <button type="button" class="status-btn" data-stope="1" data-value="Other">
+              <span class="status-dot dot-other"></span>OTHER
+            </button>
+          </div>
+          <input type="hidden" id="stope1_status" value="">
+
+          <div class="other-status-wrap" id="stope1_other_wrap">
+            <label>Other Status Details
+              <textarea id="stope1_other_details" placeholder="Describe the status..."></textarea>
+            </label>
+          </div>
+
+          <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope1_fill_point" type="text" placeholder="e.g. 2.5m"></label>
             <label>Total m³ <input id="stope1_total_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Plug m³ <input id="stope1_plug_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Poured m³ <input id="stope1_poured_m3" type="number" step="0.1" placeholder="0.0"></label>
-            <label>Containment Zone
-              <select id="stope1_containment_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Exclusion Zone
-              <select id="stope1_exclusion_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Cameras
-              <select id="stope1_cameras">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Flush Valve
-              <select id="stope1_flush_valve">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Signage
-              <select id="stope1_signage">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Wall Status
-              <select id="stope1_wall_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Bund Status
-              <select id="stope1_bund_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Changeover Points
-              <select id="stope1_changeover_points">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
           </div>
-          <label class="stope-comments">Comments <textarea id="stope1_comments" placeholder="Notes for Stope 1"></textarea></label>
+
+          <div class="checklist-divider">Stope Checklist</div>
+          <div class="checklist">
+          <div class="checklist-row" id="stope1_containment_zone_row">
+            <div class="checklist-label">Containment Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="containment_zone">○ Not Checked</button>
+            <input type="hidden" id="stope1_containment_zone" value="">
+            <div class="issue-details-wrap" id="stope1_containment_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_containment_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_exclusion_zone_row">
+            <div class="checklist-label">Exclusion Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="exclusion_zone">○ Not Checked</button>
+            <input type="hidden" id="stope1_exclusion_zone" value="">
+            <div class="issue-details-wrap" id="stope1_exclusion_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_exclusion_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_cameras_row">
+            <div class="checklist-label">Cameras</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="cameras">○ Not Checked</button>
+            <input type="hidden" id="stope1_cameras" value="">
+            <div class="issue-details-wrap" id="stope1_cameras_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_cameras_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_flush_valve_row">
+            <div class="checklist-label">Flush Valve</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="flush_valve">○ Not Checked</button>
+            <input type="hidden" id="stope1_flush_valve" value="">
+            <div class="issue-details-wrap" id="stope1_flush_valve_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_flush_valve_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_signage_row">
+            <div class="checklist-label">Signage</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="signage">○ Not Checked</button>
+            <input type="hidden" id="stope1_signage" value="">
+            <div class="issue-details-wrap" id="stope1_signage_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_signage_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_wall_status_row">
+            <div class="checklist-label">Wall Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="wall_status">○ Not Checked</button>
+            <input type="hidden" id="stope1_wall_status" value="">
+            <div class="issue-details-wrap" id="stope1_wall_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_wall_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_bund_status_row">
+            <div class="checklist-label">Bund Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="bund_status">○ Not Checked</button>
+            <input type="hidden" id="stope1_bund_status" value="">
+            <div class="issue-details-wrap" id="stope1_bund_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_bund_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope1_changeover_points_row">
+            <div class="checklist-label">Changeover Points</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="1" data-field="changeover_points">○ Not Checked</button>
+            <input type="hidden" id="stope1_changeover_points" value="">
+            <div class="issue-details-wrap" id="stope1_changeover_points_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope1_changeover_points_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          </div>
+
+          <label class="stope-comments">Additional Comments <textarea id="stope1_comments" placeholder="Notes for Stope 1"></textarea></label>
         </div>
 
-        <div class="stope">
-          <h3>Stope 2</h3>
-          <input id="stope_2_id" placeholder="Stope ID">
-          <input id="stope_2_status" placeholder="Status">
-          <input id="stope_2_total" placeholder="Total m³">
+        <div class="stope-card">
+          <!-- legacy fields kept as hidden inputs for backward compatibility with
+               existing submission/PDF/email logic — no longer shown in the UI -->
+          <input type="hidden" id="stope_2_id" value="">
+          <input type="hidden" id="stope_2_status" value="">
+          <input type="hidden" id="stope_2_total" value="">
 
-          <div class="stope-divider">Checks &amp; Details</div>
-          <div class="stope-fields">
-            <label>Stope ID <input id="stope2_id" type="text" placeholder="Stope ID"></label>
-            <label>Status
-              <select id="stope2_status">
-              <option value="">Select…</option>
-              <option value="Complete">Complete</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Stopped">Stopped</option>
-              <option value="Not Started">Not Started</option>
-              </select>
+          <div class="stope-card-header">
+            <h3>Stope 2</h3>
+            <label class="stope-id-inline">Stope ID
+              <input id="stope2_id" type="text" placeholder="e.g. S1-450">
             </label>
+          </div>
+
+          <div class="status-group-label">Stope Status</div>
+          <div class="status-btn-group" role="group" aria-label="Stope 2 status">
+            <button type="button" class="status-btn" data-stope="2" data-value="Pouring">
+              <span class="status-dot dot-pouring"></span>POURING
+            </button>
+            <button type="button" class="status-btn" data-stope="2" data-value="Stope Full">
+              <span class="status-dot dot-full"></span>STOPE FULL
+            </button>
+            <button type="button" class="status-btn" data-stope="2" data-value="Plug Curing">
+              <span class="status-dot dot-curing"></span>PLUG CURING
+            </button>
+            <button type="button" class="status-btn" data-stope="2" data-value="Other">
+              <span class="status-dot dot-other"></span>OTHER
+            </button>
+          </div>
+          <input type="hidden" id="stope2_status" value="">
+
+          <div class="other-status-wrap" id="stope2_other_wrap">
+            <label>Other Status Details
+              <textarea id="stope2_other_details" placeholder="Describe the status..."></textarea>
+            </label>
+          </div>
+
+          <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope2_fill_point" type="text" placeholder="e.g. 2.5m"></label>
             <label>Total m³ <input id="stope2_total_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Plug m³ <input id="stope2_plug_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Poured m³ <input id="stope2_poured_m3" type="number" step="0.1" placeholder="0.0"></label>
-            <label>Containment Zone
-              <select id="stope2_containment_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Exclusion Zone
-              <select id="stope2_exclusion_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Cameras
-              <select id="stope2_cameras">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Flush Valve
-              <select id="stope2_flush_valve">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Signage
-              <select id="stope2_signage">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Wall Status
-              <select id="stope2_wall_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Bund Status
-              <select id="stope2_bund_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Changeover Points
-              <select id="stope2_changeover_points">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
           </div>
-          <label class="stope-comments">Comments <textarea id="stope2_comments" placeholder="Notes for Stope 2"></textarea></label>
+
+          <div class="checklist-divider">Stope Checklist</div>
+          <div class="checklist">
+          <div class="checklist-row" id="stope2_containment_zone_row">
+            <div class="checklist-label">Containment Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="containment_zone">○ Not Checked</button>
+            <input type="hidden" id="stope2_containment_zone" value="">
+            <div class="issue-details-wrap" id="stope2_containment_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_containment_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_exclusion_zone_row">
+            <div class="checklist-label">Exclusion Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="exclusion_zone">○ Not Checked</button>
+            <input type="hidden" id="stope2_exclusion_zone" value="">
+            <div class="issue-details-wrap" id="stope2_exclusion_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_exclusion_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_cameras_row">
+            <div class="checklist-label">Cameras</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="cameras">○ Not Checked</button>
+            <input type="hidden" id="stope2_cameras" value="">
+            <div class="issue-details-wrap" id="stope2_cameras_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_cameras_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_flush_valve_row">
+            <div class="checklist-label">Flush Valve</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="flush_valve">○ Not Checked</button>
+            <input type="hidden" id="stope2_flush_valve" value="">
+            <div class="issue-details-wrap" id="stope2_flush_valve_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_flush_valve_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_signage_row">
+            <div class="checklist-label">Signage</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="signage">○ Not Checked</button>
+            <input type="hidden" id="stope2_signage" value="">
+            <div class="issue-details-wrap" id="stope2_signage_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_signage_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_wall_status_row">
+            <div class="checklist-label">Wall Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="wall_status">○ Not Checked</button>
+            <input type="hidden" id="stope2_wall_status" value="">
+            <div class="issue-details-wrap" id="stope2_wall_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_wall_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_bund_status_row">
+            <div class="checklist-label">Bund Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="bund_status">○ Not Checked</button>
+            <input type="hidden" id="stope2_bund_status" value="">
+            <div class="issue-details-wrap" id="stope2_bund_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_bund_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope2_changeover_points_row">
+            <div class="checklist-label">Changeover Points</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="2" data-field="changeover_points">○ Not Checked</button>
+            <input type="hidden" id="stope2_changeover_points" value="">
+            <div class="issue-details-wrap" id="stope2_changeover_points_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope2_changeover_points_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          </div>
+
+          <label class="stope-comments">Additional Comments <textarea id="stope2_comments" placeholder="Notes for Stope 2"></textarea></label>
         </div>
 
-        <div class="stope">
-          <h3>Stope 3</h3>
-          <input id="stope_3_id" placeholder="Stope ID">
-          <input id="stope_3_status" placeholder="Status">
-          <input id="stope_3_total" placeholder="Total m³">
+        <div class="stope-card">
+          <!-- legacy fields kept as hidden inputs for backward compatibility with
+               existing submission/PDF/email logic — no longer shown in the UI -->
+          <input type="hidden" id="stope_3_id" value="">
+          <input type="hidden" id="stope_3_status" value="">
+          <input type="hidden" id="stope_3_total" value="">
 
-          <div class="stope-divider">Checks &amp; Details</div>
-          <div class="stope-fields">
-            <label>Stope ID <input id="stope3_id" type="text" placeholder="Stope ID"></label>
-            <label>Status
-              <select id="stope3_status">
-              <option value="">Select…</option>
-              <option value="Complete">Complete</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Stopped">Stopped</option>
-              <option value="Not Started">Not Started</option>
-              </select>
+          <div class="stope-card-header">
+            <h3>Stope 3</h3>
+            <label class="stope-id-inline">Stope ID
+              <input id="stope3_id" type="text" placeholder="e.g. S1-450">
             </label>
+          </div>
+
+          <div class="status-group-label">Stope Status</div>
+          <div class="status-btn-group" role="group" aria-label="Stope 3 status">
+            <button type="button" class="status-btn" data-stope="3" data-value="Pouring">
+              <span class="status-dot dot-pouring"></span>POURING
+            </button>
+            <button type="button" class="status-btn" data-stope="3" data-value="Stope Full">
+              <span class="status-dot dot-full"></span>STOPE FULL
+            </button>
+            <button type="button" class="status-btn" data-stope="3" data-value="Plug Curing">
+              <span class="status-dot dot-curing"></span>PLUG CURING
+            </button>
+            <button type="button" class="status-btn" data-stope="3" data-value="Other">
+              <span class="status-dot dot-other"></span>OTHER
+            </button>
+          </div>
+          <input type="hidden" id="stope3_status" value="">
+
+          <div class="other-status-wrap" id="stope3_other_wrap">
+            <label>Other Status Details
+              <textarea id="stope3_other_details" placeholder="Describe the status..."></textarea>
+            </label>
+          </div>
+
+          <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope3_fill_point" type="text" placeholder="e.g. 2.5m"></label>
             <label>Total m³ <input id="stope3_total_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Plug m³ <input id="stope3_plug_m3" type="number" step="0.1" placeholder="0.0"></label>
             <label>Poured m³ <input id="stope3_poured_m3" type="number" step="0.1" placeholder="0.0"></label>
-            <label>Containment Zone
-              <select id="stope3_containment_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Exclusion Zone
-              <select id="stope3_exclusion_zone">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Cameras
-              <select id="stope3_cameras">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Flush Valve
-              <select id="stope3_flush_valve">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Signage
-              <select id="stope3_signage">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Wall Status
-              <select id="stope3_wall_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Bund Status
-              <select id="stope3_bund_status">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
-            <label>Changeover Points
-              <select id="stope3_changeover_points">
-              <option value="">Select…</option>
-              <option value="OK">OK</option>
-              <option value="Requires Attention">Requires Attention</option>
-              <option value="N/A">N/A</option>
-              </select>
-            </label>
           </div>
-          <label class="stope-comments">Comments <textarea id="stope3_comments" placeholder="Notes for Stope 3"></textarea></label>
+
+          <div class="checklist-divider">Stope Checklist</div>
+          <div class="checklist">
+          <div class="checklist-row" id="stope3_containment_zone_row">
+            <div class="checklist-label">Containment Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="containment_zone">○ Not Checked</button>
+            <input type="hidden" id="stope3_containment_zone" value="">
+            <div class="issue-details-wrap" id="stope3_containment_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_containment_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_exclusion_zone_row">
+            <div class="checklist-label">Exclusion Zone</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="exclusion_zone">○ Not Checked</button>
+            <input type="hidden" id="stope3_exclusion_zone" value="">
+            <div class="issue-details-wrap" id="stope3_exclusion_zone_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_exclusion_zone_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_cameras_row">
+            <div class="checklist-label">Cameras</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="cameras">○ Not Checked</button>
+            <input type="hidden" id="stope3_cameras" value="">
+            <div class="issue-details-wrap" id="stope3_cameras_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_cameras_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_flush_valve_row">
+            <div class="checklist-label">Flush Valve</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="flush_valve">○ Not Checked</button>
+            <input type="hidden" id="stope3_flush_valve" value="">
+            <div class="issue-details-wrap" id="stope3_flush_valve_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_flush_valve_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_signage_row">
+            <div class="checklist-label">Signage</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="signage">○ Not Checked</button>
+            <input type="hidden" id="stope3_signage" value="">
+            <div class="issue-details-wrap" id="stope3_signage_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_signage_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_wall_status_row">
+            <div class="checklist-label">Wall Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="wall_status">○ Not Checked</button>
+            <input type="hidden" id="stope3_wall_status" value="">
+            <div class="issue-details-wrap" id="stope3_wall_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_wall_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_bund_status_row">
+            <div class="checklist-label">Bund Status</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="bund_status">○ Not Checked</button>
+            <input type="hidden" id="stope3_bund_status" value="">
+            <div class="issue-details-wrap" id="stope3_bund_status_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_bund_status_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="checklist-row" id="stope3_changeover_points_row">
+            <div class="checklist-label">Changeover Points</div>
+            <button type="button" class="checklist-cycle-btn cycle-none" data-stope="3" data-field="changeover_points">○ Not Checked</button>
+            <input type="hidden" id="stope3_changeover_points" value="">
+            <div class="issue-details-wrap" id="stope3_changeover_points_issue_wrap">
+              <label>Issue Details
+                <textarea id="stope3_changeover_points_issue" placeholder="Describe the issue..."></textarea>
+              </label>
+            </div>
+          </div>
+          </div>
+
+          <label class="stope-comments">Additional Comments <textarea id="stope3_comments" placeholder="Notes for Stope 3"></textarea></label>
         </div>
       </div>
     </section>
@@ -369,74 +492,80 @@
         <div class="pdf-stope-card">
           <div class="pdf-stope-head">
             <h3>Stope 1</h3>
+            <span id="pdf_stope1_id" class="pdf-stope-id">—</span>
           </div>
-          <div class="pdf-quick-row">
-            <div><span>Stope ID</span><strong id="pdf_stope1_quick_id">—</strong></div>
-            <div><span>Status</span><strong id="pdf_stope1_quick_status">—</strong></div>
-            <div><span>Total m³</span><strong id="pdf_stope1_quick_total">—</strong></div>
-          </div>
-          <div class="pdf-checklist">
-            <div class="pdf-checklist-grid">
-              <div class="pdf-field">
-                <span>Stope ID</span>
-                <strong id="pdf_stope1_id">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Level of Fill Point</span>
-                <strong id="pdf_stope1_fill_point">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Total m³</span>
-                <strong id="pdf_stope1_total_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Plug m³</span>
-                <strong id="pdf_stope1_plug_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Poured m³</span>
-                <strong id="pdf_stope1_poured_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Containment Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_containment_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Exclusion Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_exclusion_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Cameras</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_cameras">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Flush Valve</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_flush_valve">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Signage</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_signage">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Wall Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_wall_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Bund Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_bund_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Changeover Points</span>
-                <span class="pdf-pill pill-na" id="pdf_stope1_changeover_points">—</span>
-              </div>
+
+          <div class="pdf-status-row">
+            <div>
+              <span>Stope Status</span>
+              <span class="pdf-pill pill-na" id="pdf_stope1_status">—</span>
+            </div>
+            <div class="pdf-status-other">
+              <span>Other Status Details</span>
+              <span id="pdf_stope1_other_details">—</span>
             </div>
           </div>
+
+          <table class="pdf-table pdf-metrics-table">
+            <tr>
+              <td class="label">Level of Fill Point</td><td id="pdf_stope1_fill_point">—</td>
+              <td class="label">Total m³</td><td id="pdf_stope1_total_m3">—</td>
+            </tr>
+            <tr>
+              <td class="label">Plug m³</td><td id="pdf_stope1_plug_m3">—</td>
+              <td class="label">Poured m³</td><td id="pdf_stope1_poured_m3">—</td>
+            </tr>
+          </table>
+
+          <div class="pdf-checklist-title">Stope Checklist</div>
+          <table class="pdf-table pdf-checklist-table">
+            <tr>
+              <td class="label">Item</td><td class="label">Status</td><td class="label">Issue Details</td>
+            </tr>
+            <tr>
+              <td class="label">Containment Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_containment_zone">—</span></td>
+              <td id="pdf_stope1_containment_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Exclusion Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_exclusion_zone">—</span></td>
+              <td id="pdf_stope1_exclusion_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Cameras</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_cameras">—</span></td>
+              <td id="pdf_stope1_cameras_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Flush Valve</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_flush_valve">—</span></td>
+              <td id="pdf_stope1_flush_valve_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Signage</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_signage">—</span></td>
+              <td id="pdf_stope1_signage_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Wall Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_wall_status">—</span></td>
+              <td id="pdf_stope1_wall_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Bund Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_bund_status">—</span></td>
+              <td id="pdf_stope1_bund_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Changeover Points</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope1_changeover_points">—</span></td>
+              <td id="pdf_stope1_changeover_points_issue">—</td>
+            </tr>
+          </table>
+
           <div class="pdf-comments-inline">
-            <span style="display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#8b939b;margin-bottom:4px;">Stope Comments</span>
+            <span class="pdf-comments-label">Additional Comments</span>
             <span id="pdf_stope1_comments">—</span>
           </div>
         </div>
@@ -444,74 +573,80 @@
         <div class="pdf-stope-card">
           <div class="pdf-stope-head">
             <h3>Stope 2</h3>
+            <span id="pdf_stope2_id" class="pdf-stope-id">—</span>
           </div>
-          <div class="pdf-quick-row">
-            <div><span>Stope ID</span><strong id="pdf_stope2_quick_id">—</strong></div>
-            <div><span>Status</span><strong id="pdf_stope2_quick_status">—</strong></div>
-            <div><span>Total m³</span><strong id="pdf_stope2_quick_total">—</strong></div>
-          </div>
-          <div class="pdf-checklist">
-            <div class="pdf-checklist-grid">
-              <div class="pdf-field">
-                <span>Stope ID</span>
-                <strong id="pdf_stope2_id">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Level of Fill Point</span>
-                <strong id="pdf_stope2_fill_point">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Total m³</span>
-                <strong id="pdf_stope2_total_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Plug m³</span>
-                <strong id="pdf_stope2_plug_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Poured m³</span>
-                <strong id="pdf_stope2_poured_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Containment Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_containment_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Exclusion Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_exclusion_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Cameras</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_cameras">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Flush Valve</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_flush_valve">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Signage</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_signage">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Wall Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_wall_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Bund Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_bund_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Changeover Points</span>
-                <span class="pdf-pill pill-na" id="pdf_stope2_changeover_points">—</span>
-              </div>
+
+          <div class="pdf-status-row">
+            <div>
+              <span>Stope Status</span>
+              <span class="pdf-pill pill-na" id="pdf_stope2_status">—</span>
+            </div>
+            <div class="pdf-status-other">
+              <span>Other Status Details</span>
+              <span id="pdf_stope2_other_details">—</span>
             </div>
           </div>
+
+          <table class="pdf-table pdf-metrics-table">
+            <tr>
+              <td class="label">Level of Fill Point</td><td id="pdf_stope2_fill_point">—</td>
+              <td class="label">Total m³</td><td id="pdf_stope2_total_m3">—</td>
+            </tr>
+            <tr>
+              <td class="label">Plug m³</td><td id="pdf_stope2_plug_m3">—</td>
+              <td class="label">Poured m³</td><td id="pdf_stope2_poured_m3">—</td>
+            </tr>
+          </table>
+
+          <div class="pdf-checklist-title">Stope Checklist</div>
+          <table class="pdf-table pdf-checklist-table">
+            <tr>
+              <td class="label">Item</td><td class="label">Status</td><td class="label">Issue Details</td>
+            </tr>
+            <tr>
+              <td class="label">Containment Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_containment_zone">—</span></td>
+              <td id="pdf_stope2_containment_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Exclusion Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_exclusion_zone">—</span></td>
+              <td id="pdf_stope2_exclusion_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Cameras</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_cameras">—</span></td>
+              <td id="pdf_stope2_cameras_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Flush Valve</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_flush_valve">—</span></td>
+              <td id="pdf_stope2_flush_valve_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Signage</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_signage">—</span></td>
+              <td id="pdf_stope2_signage_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Wall Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_wall_status">—</span></td>
+              <td id="pdf_stope2_wall_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Bund Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_bund_status">—</span></td>
+              <td id="pdf_stope2_bund_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Changeover Points</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope2_changeover_points">—</span></td>
+              <td id="pdf_stope2_changeover_points_issue">—</td>
+            </tr>
+          </table>
+
           <div class="pdf-comments-inline">
-            <span style="display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#8b939b;margin-bottom:4px;">Stope Comments</span>
+            <span class="pdf-comments-label">Additional Comments</span>
             <span id="pdf_stope2_comments">—</span>
           </div>
         </div>
@@ -519,74 +654,80 @@
         <div class="pdf-stope-card">
           <div class="pdf-stope-head">
             <h3>Stope 3</h3>
+            <span id="pdf_stope3_id" class="pdf-stope-id">—</span>
           </div>
-          <div class="pdf-quick-row">
-            <div><span>Stope ID</span><strong id="pdf_stope3_quick_id">—</strong></div>
-            <div><span>Status</span><strong id="pdf_stope3_quick_status">—</strong></div>
-            <div><span>Total m³</span><strong id="pdf_stope3_quick_total">—</strong></div>
-          </div>
-          <div class="pdf-checklist">
-            <div class="pdf-checklist-grid">
-              <div class="pdf-field">
-                <span>Stope ID</span>
-                <strong id="pdf_stope3_id">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Level of Fill Point</span>
-                <strong id="pdf_stope3_fill_point">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Total m³</span>
-                <strong id="pdf_stope3_total_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Plug m³</span>
-                <strong id="pdf_stope3_plug_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Poured m³</span>
-                <strong id="pdf_stope3_poured_m3">—</strong>
-              </div>
-              <div class="pdf-field">
-                <span>Containment Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_containment_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Exclusion Zone</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_exclusion_zone">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Cameras</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_cameras">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Flush Valve</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_flush_valve">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Signage</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_signage">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Wall Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_wall_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Bund Status</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_bund_status">—</span>
-              </div>
-              <div class="pdf-field">
-                <span>Changeover Points</span>
-                <span class="pdf-pill pill-na" id="pdf_stope3_changeover_points">—</span>
-              </div>
+
+          <div class="pdf-status-row">
+            <div>
+              <span>Stope Status</span>
+              <span class="pdf-pill pill-na" id="pdf_stope3_status">—</span>
+            </div>
+            <div class="pdf-status-other">
+              <span>Other Status Details</span>
+              <span id="pdf_stope3_other_details">—</span>
             </div>
           </div>
+
+          <table class="pdf-table pdf-metrics-table">
+            <tr>
+              <td class="label">Level of Fill Point</td><td id="pdf_stope3_fill_point">—</td>
+              <td class="label">Total m³</td><td id="pdf_stope3_total_m3">—</td>
+            </tr>
+            <tr>
+              <td class="label">Plug m³</td><td id="pdf_stope3_plug_m3">—</td>
+              <td class="label">Poured m³</td><td id="pdf_stope3_poured_m3">—</td>
+            </tr>
+          </table>
+
+          <div class="pdf-checklist-title">Stope Checklist</div>
+          <table class="pdf-table pdf-checklist-table">
+            <tr>
+              <td class="label">Item</td><td class="label">Status</td><td class="label">Issue Details</td>
+            </tr>
+            <tr>
+              <td class="label">Containment Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_containment_zone">—</span></td>
+              <td id="pdf_stope3_containment_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Exclusion Zone</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_exclusion_zone">—</span></td>
+              <td id="pdf_stope3_exclusion_zone_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Cameras</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_cameras">—</span></td>
+              <td id="pdf_stope3_cameras_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Flush Valve</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_flush_valve">—</span></td>
+              <td id="pdf_stope3_flush_valve_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Signage</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_signage">—</span></td>
+              <td id="pdf_stope3_signage_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Wall Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_wall_status">—</span></td>
+              <td id="pdf_stope3_wall_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Bund Status</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_bund_status">—</span></td>
+              <td id="pdf_stope3_bund_status_issue">—</td>
+            </tr>
+            <tr>
+              <td class="label">Changeover Points</td>
+              <td><span class="pdf-pill pill-na" id="pdf_stope3_changeover_points">—</span></td>
+              <td id="pdf_stope3_changeover_points_issue">—</td>
+            </tr>
+          </table>
+
           <div class="pdf-comments-inline">
-            <span style="display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#8b939b;margin-bottom:4px;">Stope Comments</span>
+            <span class="pdf-comments-label">Additional Comments</span>
             <span id="pdf_stope3_comments">—</span>
           </div>
         </div>

@@ -19,57 +19,85 @@ function collectReport(isTest=false){
       {
         // existing fields (unchanged)
         id: val("stope_1_id"), status: val("stope_1_status"), total_m3: val("stope_1_total"),
-        // new detail fields
+        // detail fields (unchanged keys — "detail_status" now holds the
+        // Stope Status button value: Pouring / Stope Full / Plug Curing / Other)
         stope_id: val("stope1_id"),
         detail_status: val("stope1_status"),
+        other_details: val("stope1_other_details"),
         fill_point: val("stope1_fill_point"),
         detail_total_m3: val("stope1_total_m3"),
         plug_m3: val("stope1_plug_m3"),
         poured_m3: val("stope1_poured_m3"),
         containment_zone: val("stope1_containment_zone"),
+        containment_zone_issue: val("stope1_containment_zone_issue"),
         exclusion_zone: val("stope1_exclusion_zone"),
+        exclusion_zone_issue: val("stope1_exclusion_zone_issue"),
         cameras: val("stope1_cameras"),
+        cameras_issue: val("stope1_cameras_issue"),
         flush_valve: val("stope1_flush_valve"),
+        flush_valve_issue: val("stope1_flush_valve_issue"),
         signage: val("stope1_signage"),
+        signage_issue: val("stope1_signage_issue"),
         wall_status: val("stope1_wall_status"),
+        wall_status_issue: val("stope1_wall_status_issue"),
         bund_status: val("stope1_bund_status"),
+        bund_status_issue: val("stope1_bund_status_issue"),
         changeover_points: val("stope1_changeover_points"),
+        changeover_points_issue: val("stope1_changeover_points_issue"),
         comments: val("stope1_comments")
       },
       {
         id: val("stope_2_id"), status: val("stope_2_status"), total_m3: val("stope_2_total"),
         stope_id: val("stope2_id"),
         detail_status: val("stope2_status"),
+        other_details: val("stope2_other_details"),
         fill_point: val("stope2_fill_point"),
         detail_total_m3: val("stope2_total_m3"),
         plug_m3: val("stope2_plug_m3"),
         poured_m3: val("stope2_poured_m3"),
         containment_zone: val("stope2_containment_zone"),
+        containment_zone_issue: val("stope2_containment_zone_issue"),
         exclusion_zone: val("stope2_exclusion_zone"),
+        exclusion_zone_issue: val("stope2_exclusion_zone_issue"),
         cameras: val("stope2_cameras"),
+        cameras_issue: val("stope2_cameras_issue"),
         flush_valve: val("stope2_flush_valve"),
+        flush_valve_issue: val("stope2_flush_valve_issue"),
         signage: val("stope2_signage"),
+        signage_issue: val("stope2_signage_issue"),
         wall_status: val("stope2_wall_status"),
+        wall_status_issue: val("stope2_wall_status_issue"),
         bund_status: val("stope2_bund_status"),
+        bund_status_issue: val("stope2_bund_status_issue"),
         changeover_points: val("stope2_changeover_points"),
+        changeover_points_issue: val("stope2_changeover_points_issue"),
         comments: val("stope2_comments")
       },
       {
         id: val("stope_3_id"), status: val("stope_3_status"), total_m3: val("stope_3_total"),
         stope_id: val("stope3_id"),
         detail_status: val("stope3_status"),
+        other_details: val("stope3_other_details"),
         fill_point: val("stope3_fill_point"),
         detail_total_m3: val("stope3_total_m3"),
         plug_m3: val("stope3_plug_m3"),
         poured_m3: val("stope3_poured_m3"),
         containment_zone: val("stope3_containment_zone"),
+        containment_zone_issue: val("stope3_containment_zone_issue"),
         exclusion_zone: val("stope3_exclusion_zone"),
+        exclusion_zone_issue: val("stope3_exclusion_zone_issue"),
         cameras: val("stope3_cameras"),
+        cameras_issue: val("stope3_cameras_issue"),
         flush_valve: val("stope3_flush_valve"),
+        flush_valve_issue: val("stope3_flush_valve_issue"),
         signage: val("stope3_signage"),
+        signage_issue: val("stope3_signage_issue"),
         wall_status: val("stope3_wall_status"),
+        wall_status_issue: val("stope3_wall_status_issue"),
         bund_status: val("stope3_bund_status"),
+        bund_status_issue: val("stope3_bund_status_issue"),
         changeover_points: val("stope3_changeover_points"),
+        changeover_points_issue: val("stope3_changeover_points_issue"),
         comments: val("stope3_comments")
       }
     ]
@@ -83,6 +111,76 @@ function setStatus(type, msg){
 }
 
 /* ============================================================
+   STOPE STATUS BUTTONS (Pouring / Stope Full / Plug Curing / Other)
+   Writes into the existing hidden #stope{n}_status input so
+   collectReport() keeps working unchanged.
+   ============================================================ */
+
+function initStatusButtons(){
+  document.querySelectorAll(".status-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const stope = btn.dataset.stope;
+      const value = btn.dataset.value;
+      const hidden = document.getElementById(`stope${stope}_status`);
+      if(hidden) hidden.value = value;
+
+      document.querySelectorAll(`.status-btn[data-stope="${stope}"]`).forEach(b => {
+        b.classList.toggle("active", b === btn);
+      });
+
+      const otherWrap = document.getElementById(`stope${stope}_other_wrap`);
+      if(otherWrap){
+        otherWrap.classList.toggle("show", value === "Other");
+      }
+    });
+  });
+}
+
+/* ============================================================
+   STOPE CHECKLIST CYCLE BUTTONS
+   Not Checked -> OK -> Requires Attention -> N/A -> Not Checked
+   Writes into the existing hidden #stope{n}_{field} input so
+   collectReport() keeps working unchanged. Requires Attention
+   auto-expands an "Issue Details" box and reddens the row.
+   ============================================================ */
+
+const CHECKLIST_CYCLE = ["", "OK", "Requires Attention", "N/A"];
+
+function checklistCycleMeta(state){
+  switch(state){
+    case "OK": return { icon: "✅", label: "OK", cls: "cycle-ok" };
+    case "Requires Attention": return { icon: "❌", label: "Requires Attention", cls: "cycle-issue" };
+    case "N/A": return { icon: "N/A", label: "N/A", cls: "cycle-na" };
+    default: return { icon: "○", label: "Not Checked", cls: "cycle-none" };
+  }
+}
+
+function initChecklistButtons(){
+  document.querySelectorAll(".checklist-cycle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const stope = btn.dataset.stope;
+      const field = btn.dataset.field;
+      const hidden = document.getElementById(`stope${stope}_${field}`);
+      if(!hidden) return;
+
+      const currentIdx = CHECKLIST_CYCLE.indexOf(hidden.value);
+      const next = CHECKLIST_CYCLE[(currentIdx + 1) % CHECKLIST_CYCLE.length];
+      hidden.value = next;
+
+      const meta = checklistCycleMeta(next);
+      btn.textContent = `${meta.icon} ${meta.label}`;
+      btn.className = "checklist-cycle-btn " + meta.cls;
+
+      const row = document.getElementById(`stope${stope}_${field}_row`);
+      const issueWrap = document.getElementById(`stope${stope}_${field}_issue_wrap`);
+      const isIssue = next === "Requires Attention";
+      if(row) row.classList.toggle("issue-active", isIssue);
+      if(issueWrap) issueWrap.classList.toggle("show", isIssue);
+    });
+  });
+}
+
+/* ============================================================
    PDF TEMPLATE POPULATION
    Fills the hidden #pdfTemplate (see index.html) with the same
    values already collected by collectReport(). Does not touch
@@ -91,12 +189,12 @@ function setStatus(type, msg){
 
 const PDF_STATUS_META = {
   "OK": "pill-ok",
-  "Complete": "pill-ok",
+  "Pouring": "pill-ok",
   "Requires Attention": "pill-warn",
-  "Stopped": "pill-warn",
-  "Ongoing": "pill-info",
+  "Stope Full": "pill-warn",
+  "Plug Curing": "pill-curing",
   "N/A": "pill-na",
-  "Not Started": "pill-na"
+  "Other": "pill-na"
 };
 
 function pdfSetText(id, value){
@@ -106,12 +204,12 @@ function pdfSetText(id, value){
   el.textContent = str || "—";
 }
 
-function pdfSetPill(id, value){
+function pdfSetPill(id, value, emptyLabel){
   const el = document.getElementById(id);
   if(!el) return;
   const str = (value === undefined || value === null || String(value).trim() === "") ? "" : String(value);
-  el.textContent = str || "—";
-  el.className = "pdf-pill " + (PDF_STATUS_META[str] || "pill-na");
+  el.textContent = str || (emptyLabel || "Not Set");
+  el.className = "pdf-pill " + (str ? (PDF_STATUS_META[str] || "pill-na") : "pill-na");
 }
 
 function populatePdfTemplate(report){
@@ -126,29 +224,28 @@ function populatePdfTemplate(report){
   pdfSetText("pdf_comments", report.comments);
   pdfSetText("pdf_generated_at", new Date().toLocaleString());
 
+  const checklistFields = [
+    "containment_zone", "exclusion_zone", "cameras", "flush_valve",
+    "signage", "wall_status", "bund_status", "changeover_points"
+  ];
+
   (report.stopes || []).forEach((stope, idx) => {
     const n = idx + 1;
 
-    // quick summary row (legacy fields)
-    pdfSetText(`pdf_stope${n}_quick_id`, stope.id);
-    pdfSetText(`pdf_stope${n}_quick_status`, stope.status);
-    pdfSetText(`pdf_stope${n}_quick_total`, stope.total_m3);
-
-    // detailed checklist fields
     pdfSetText(`pdf_stope${n}_id`, stope.stope_id);
-    pdfSetPill(`pdf_stope${n}_status`, stope.detail_status);
+    pdfSetPill(`pdf_stope${n}_status`, stope.detail_status, "Not Set");
+    pdfSetText(`pdf_stope${n}_other_details`, stope.other_details);
+
     pdfSetText(`pdf_stope${n}_fill_point`, stope.fill_point);
     pdfSetText(`pdf_stope${n}_total_m3`, stope.detail_total_m3);
     pdfSetText(`pdf_stope${n}_plug_m3`, stope.plug_m3);
     pdfSetText(`pdf_stope${n}_poured_m3`, stope.poured_m3);
-    pdfSetPill(`pdf_stope${n}_containment_zone`, stope.containment_zone);
-    pdfSetPill(`pdf_stope${n}_exclusion_zone`, stope.exclusion_zone);
-    pdfSetPill(`pdf_stope${n}_cameras`, stope.cameras);
-    pdfSetPill(`pdf_stope${n}_flush_valve`, stope.flush_valve);
-    pdfSetPill(`pdf_stope${n}_signage`, stope.signage);
-    pdfSetPill(`pdf_stope${n}_wall_status`, stope.wall_status);
-    pdfSetPill(`pdf_stope${n}_bund_status`, stope.bund_status);
-    pdfSetPill(`pdf_stope${n}_changeover_points`, stope.changeover_points);
+
+    checklistFields.forEach(field => {
+      pdfSetPill(`pdf_stope${n}_${field}`, stope[field], "Not Checked");
+      pdfSetText(`pdf_stope${n}_${field}_issue`, stope[`${field}_issue`]);
+    });
+
     pdfSetText(`pdf_stope${n}_comments`, stope.comments);
   });
 }
@@ -256,4 +353,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("shift_date").value = new Date().toISOString().slice(0,10);
   document.getElementById("submitBtn").addEventListener("click", () => submitReport(false));
   document.getElementById("testBtn").addEventListener("click", () => submitReport(true));
+  initStatusButtons();
+  initChecklistButtons();
 });
