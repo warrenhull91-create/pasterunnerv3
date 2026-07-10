@@ -48,6 +48,15 @@
       <button type="button" id="addStopeBtn" class="btn add-stope-btn">+ Add Another Stope</button>
     </section>
     <section class="card">
+      <h2>Level Checks</h2>
+      <div class="level-grid" id="levelsContainer">
+        <!-- Level rows are generated dynamically by app.js (createLevelCard).
+             Starts with one row; "+ Add Level" appends more, each
+             independently removable (at least one always remains). -->
+      </div>
+      <button type="button" id="addLevelBtn" class="btn add-stope-btn">+ Add Level</button>
+    </section>
+    <section class="card">
       <h2>Times & Notes</h2>
       <div class="grid">
         <label class="required">Started Pouring <input id="started_pouring" type="time"></label>
@@ -105,6 +114,14 @@
         <div id="pdfStopesContainer">
           <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture,
                one card per current stope in the form, in order. -->
+        </div>
+      </div>
+
+      <div class="pdf-section">
+        <h2 class="pdf-section-title">Level Checks</h2>
+        <div id="pdfLevelsContainer">
+          <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture,
+               one row per current level check, in order. -->
         </div>
       </div>
 

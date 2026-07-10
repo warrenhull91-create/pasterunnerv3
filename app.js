@@ -320,6 +320,155 @@ function initStopesContainerEvents(){
 }
 
 /* ============================================================
+   DYNAMIC LEVEL CHECKS
+   Same pattern as the stope cards: a permanent unique id (lid)
+   per row for DOM uniqueness, display numbering computed from
+   DOM position so add/remove/renumber is always consistent.
+   ============================================================ */
+let levelUidCounter = 0;
+
+function levelCardTemplate(lid){
+  return `
+        <div class="level-card" data-lid="${lid}">
+          <div class="level-card-header">
+            <h3>Level Check</h3>
+            <button type="button" class="remove-stope-btn remove-level-btn">Remove Level</button>
+          </div>
+
+          <label>Level <input id="level_${lid}_name" data-field="level_name" type="text" placeholder="e.g. 450 Level"></label>
+
+          <div class="level-status-group">
+            <button type="button" class="level-status-btn level-status-checked" data-value="Checked">✅ CHECKED</button>
+            <button type="button" class="level-status-btn level-status-cant" data-value="Cant Access">🚫 CAN'T ACCESS</button>
+          </div>
+          <input type="hidden" id="level_${lid}_status" data-field="status" value="">
+          <input type="hidden" id="level_${lid}_timestamp" data-field="timestamp" value="">
+
+          <div class="level-timestamp" data-timestamp-display style="display:none;"></div>
+
+          <div class="level-reason-wrap" data-reason-wrap>
+            <label>Reason Access Was Not Possible
+              <textarea id="level_${lid}_reason" data-field="cant_access_reason" placeholder="Explain why this level could not be accessed..."></textarea>
+            </label>
+          </div>
+
+          <label class="level-notes">Level Check Notes <textarea id="level_${lid}_notes" data-field="notes" placeholder="Notes..."></textarea></label>
+        </div>`;
+}
+
+function addLevel(){
+  levelUidCounter += 1;
+  const lid = levelUidCounter;
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = levelCardTemplate(lid).trim();
+  const card = wrapper.firstElementChild;
+  document.getElementById("levelsContainer").appendChild(card);
+  renumberLevels();
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function removeLevel(card){
+  card.remove();
+  renumberLevels();
+}
+
+function renumberLevels(){
+  const cards = document.querySelectorAll("#levelsContainer .level-card");
+  cards.forEach((card, idx) => {
+    card.dataset.displayNumber = idx + 1;
+    const removeBtn = card.querySelector(".remove-level-btn");
+    if(removeBtn) removeBtn.style.display = (cards.length <= 1) ? "none" : "";
+  });
+}
+
+function formatTimestampNow(){
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
+  const timePart = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
+}
+
+function handleLevelStatusClick(btn){
+  const card = btn.closest(".level-card");
+  const value = btn.dataset.value; // "Checked" | "Cant Access"
+  const statusHidden = card.querySelector('[data-field="status"]');
+  const timestampHidden = card.querySelector('[data-field="timestamp"]');
+  const timestampDisplay = card.querySelector("[data-timestamp-display]");
+  const reasonWrap = card.querySelector("[data-reason-wrap]");
+  const reasonField = card.querySelector('[data-field="cant_access_reason"]');
+
+  // Timestamp is captured at the exact moment of this press, every time
+  // the status is (re)selected — including switching between the two.
+  const stamp = formatTimestampNow();
+  if(statusHidden) statusHidden.value = value;
+  if(timestampHidden) timestampHidden.value = stamp;
+
+  card.querySelectorAll(".level-status-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.value === value);
+  });
+
+  card.classList.toggle("level-card-checked", value === "Checked");
+  card.classList.toggle("level-card-issue", value === "Cant Access");
+
+  if(timestampDisplay){
+    timestampDisplay.style.display = "block";
+    timestampDisplay.textContent = (value === "Checked" ? "✅ Checked — " : "🚫 Can't Access — ") + stamp;
+  }
+
+  if(value === "Checked"){
+    if(reasonWrap) reasonWrap.classList.remove("show");
+    if(reasonField){
+      reasonField.value = "";
+      reasonField.classList.remove("field-invalid");
+    }
+  } else {
+    if(reasonWrap) reasonWrap.classList.add("show");
+  }
+}
+
+function initLevelsContainerEvents(){
+  const container = document.getElementById("levelsContainer");
+
+  container.addEventListener("click", (e) => {
+    const statusBtn = e.target.closest(".level-status-btn");
+    if(statusBtn){ handleLevelStatusClick(statusBtn); return; }
+
+    const removeBtn = e.target.closest(".remove-level-btn");
+    if(removeBtn){
+      const card = removeBtn.closest(".level-card");
+      const cards = container.querySelectorAll(".level-card");
+      if(cards.length <= 1) return; // always keep at least one level row
+      if(confirm("Remove this level check?")){
+        removeLevel(card);
+      }
+      return;
+    }
+  });
+
+  container.addEventListener("input", (e) => {
+    if(e.target.matches('[data-field="cant_access_reason"]') && e.target.value.trim()){
+      e.target.classList.remove("field-invalid");
+    }
+  });
+}
+
+/* Returns { valid, firstInvalidField } — checked before submission so a
+   missing "Can't Access" reason blocks submit instead of silently
+   going out incomplete. */
+function validateLevels(){
+  const cards = document.querySelectorAll("#levelsContainer .level-card");
+  for(const card of cards){
+    const status = card.querySelector('[data-field="status"]')?.value || "";
+    const reasonField = card.querySelector('[data-field="cant_access_reason"]');
+    if(status === "Cant Access" && !(reasonField?.value || "").trim()){
+      reasonField?.classList.add("field-invalid");
+      return { valid: false, firstInvalidField: reasonField };
+    }
+  }
+  return { valid: true, firstInvalidField: null };
+}
+
+/* ============================================================
    REPORT COLLECTION
    Shift-level fields are read exactly as before (same IDs).
    Stope fields are now read dynamically from however many
@@ -365,6 +514,21 @@ function collectReport(isTest=false){
     return stope;
   });
 
+  const levels = Array.from(document.querySelectorAll("#levelsContainer .level-card")).map((card, idx) => {
+    const getVal = (field) => {
+      const el = card.querySelector(`[data-field="${field}"]`);
+      return (el && el.value ? el.value : "").trim();
+    };
+    return {
+      level_number: idx + 1,
+      level_name: getVal("level_name"),
+      status: getVal("status"),
+      timestamp: getVal("timestamp"),
+      cant_access_reason: getVal("cant_access_reason"),
+      notes: getVal("notes")
+    };
+  });
+
   return {
     isTest,
     shift_date: val("shift_date") || today,
@@ -376,7 +540,8 @@ function collectReport(isTest=false){
     started_pouring: val("started_pouring"),
     finished_pouring: val("finished_pouring"),
     comments: val("comments") || (isTest ? "Test submission from Paste Runner V3." : ""),
-    stopes
+    stopes,
+    levels
   };
 }
 
@@ -520,6 +685,45 @@ function waitForImages(container){
   }));
 }
 
+const LEVEL_STATUS_META = {
+  "Checked": "pill-ok",
+  "Cant Access": "pill-warn"
+};
+
+function buildPdfLevelCardHTML(level, n){
+  const status = level.status || "";
+  const cls = status ? (LEVEL_STATUS_META[status] || "pill-na") : "pill-na";
+  const statusLabel = status === "Cant Access" ? "Can't Access" : (status || "Not Set");
+
+  return `
+        <div class="pdf-stope-card">
+          <div class="pdf-stope-head">
+            <h3>${pdfTextOrDash(level.level_name || `Level ${n}`)}</h3>
+            <span class="pdf-stope-id">Level Check ${n}</span>
+          </div>
+
+          <div class="pdf-status-row">
+            <div>
+              <span>Status</span>
+              <span class="pdf-pill ${cls}">${escapeHtml(statusLabel)}</span>
+            </div>
+            <div class="pdf-status-other">
+              <span>Timestamp</span>
+              <span>${pdfTextOrDash(level.timestamp)}</span>
+            </div>
+          </div>
+
+          <div class="pdf-comments-inline">
+            <span class="pdf-comments-label">Reason Access Was Not Possible</span>
+            <span>${pdfTextOrDash(level.cant_access_reason)}</span>
+          </div>
+          <div class="pdf-comments-inline">
+            <span class="pdf-comments-label">Level Check Notes</span>
+            <span>${pdfTextOrDash(level.notes)}</span>
+          </div>
+        </div>`;
+}
+
 async function populatePdfTemplate(report){
   pdfSetText("pdf_shift_date", report.shift_date);
   pdfSetText("pdf_shift_type", report.shift_type);
@@ -532,15 +736,22 @@ async function populatePdfTemplate(report){
   pdfSetText("pdf_comments", report.comments);
   pdfSetText("pdf_generated_at", new Date().toLocaleString());
 
-  const container = document.getElementById("pdfStopesContainer");
-  container.innerHTML = (report.stopes || [])
+  const stopesContainer = document.getElementById("pdfStopesContainer");
+  stopesContainer.innerHTML = (report.stopes || [])
     .map((stope, idx) => buildPdfStopeCardHTML(stope, idx + 1))
     .join("");
+
+  const levelsContainer = document.getElementById("pdfLevelsContainer");
+  if(levelsContainer){
+    levelsContainer.innerHTML = (report.levels || [])
+      .map((level, idx) => buildPdfLevelCardHTML(level, idx + 1))
+      .join("");
+  }
 
   // Photos are embedded as <img src="data:..."> — make sure they've
   // actually decoded before html2canvas captures the page, or the
   // PDF can come out with blank image boxes.
-  await waitForImages(container);
+  await waitForImages(stopesContainer);
 }
 
 /* ============================================================
@@ -607,6 +818,16 @@ function blobToBase64(blob){
 
 async function submitReport(isTest=false){
   try{
+    const levelCheck = validateLevels();
+    if(!levelCheck.valid){
+      setStatus("bad", "Please explain why this level could not be accessed.");
+      if(levelCheck.firstInvalidField){
+        levelCheck.firstInvalidField.scrollIntoView({ behavior: "smooth", block: "center" });
+        levelCheck.firstInvalidField.focus();
+      }
+      return;
+    }
+
     setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
     const report = collectReport(isTest);
 
@@ -650,7 +871,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("submitBtn").addEventListener("click", () => submitReport(false));
   document.getElementById("testBtn").addEventListener("click", () => submitReport(true));
   document.getElementById("addStopeBtn").addEventListener("click", () => addStope());
+  document.getElementById("addLevelBtn").addEventListener("click", () => addLevel());
 
   initStopesContainerEvents();
+  initLevelsContainerEvents();
   addStope(); // seed the form with exactly one stope card (Stope 1)
+  addLevel(); // seed the form with exactly one level check row
 });
