@@ -41,28 +41,45 @@
       <h2>Stopes</h2>
       <div class="stope-grid" id="stopesContainer">
         <!-- Stope cards are generated dynamically by app.js (createStopeCard).
-             The form starts with exactly one card; "+ Add Another Stope"
-             appends more, each auto-numbered and independently removable
-             (except the first). -->
+             The form starts with NO cards — the user adds each one with
+             "+ Add Stope" below, names it, and can remove any of them. -->
       </div>
-      <button type="button" id="addStopeBtn" class="btn add-stope-btn">+ Add Another Stope</button>
+      <button type="button" id="addStopeBtn" class="btn add-stope-btn">+ Add Stope</button>
     </section>
     <section class="card">
       <h2>Level Checks</h2>
-      <div class="level-grid" id="levelsContainer">
-        <!-- Level rows are generated dynamically by app.js (createLevelCard).
-             Starts with one row; "+ Add Level" appends more, each
-             independently removable (at least one always remains). -->
+      <div class="level-check-table" id="levelsContainer">
+        <div class="level-check-row" data-level-row="1">
+          <label class="level-check-level">Level 1 <input id="level_1_name" data-level-name data-level-index="1" type="text" placeholder="e.g. 1450 Level"></label>
+          <label class="level-check-time">Time <input id="level_1_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_1_timestamp_full" data-level-full value="">
+        </div>
+        <div class="level-check-row" data-level-row="2">
+          <label class="level-check-level">Level 2 <input id="level_2_name" data-level-name data-level-index="2" type="text" placeholder="e.g. 1380 Level"></label>
+          <label class="level-check-time">Time <input id="level_2_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_2_timestamp_full" data-level-full value="">
+        </div>
+        <div class="level-check-row" data-level-row="3">
+          <label class="level-check-level">Level 3 <input id="level_3_name" data-level-name data-level-index="3" type="text" placeholder="e.g. 1260 Level"></label>
+          <label class="level-check-time">Time <input id="level_3_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_3_timestamp_full" data-level-full value="">
+        </div>
+        <div class="level-check-row" data-level-row="4">
+          <label class="level-check-level">Level 4 <input id="level_4_name" data-level-name data-level-index="4" type="text" placeholder="Level name"></label>
+          <label class="level-check-time">Time <input id="level_4_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_4_timestamp_full" data-level-full value="">
+        </div>
+        <div class="level-check-row" data-level-row="5">
+          <label class="level-check-level">Level 5 <input id="level_5_name" data-level-name data-level-index="5" type="text" placeholder="Level name"></label>
+          <label class="level-check-time">Time <input id="level_5_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_5_timestamp_full" data-level-full value="">
+        </div>
+        <div class="level-check-row" data-level-row="6">
+          <label class="level-check-level">Level 6 <input id="level_6_name" data-level-name data-level-index="6" type="text" placeholder="Level name"></label>
+          <label class="level-check-time">Time <input id="level_6_time" data-level-time type="text" readonly placeholder="--:--"></label>
+          <input type="hidden" id="level_6_timestamp_full" data-level-full value="">
+        </div>
       </div>
-      <button type="button" id="addLevelBtn" class="btn add-stope-btn">+ Add Level</button>
-    </section>
-    <section class="card">
-      <h2>Times & Notes</h2>
-      <div class="grid">
-        <label class="required">Started Pouring <input id="started_pouring" type="time"></label>
-        <label class="required">Finished Pouring <input id="finished_pouring" type="time"></label>
-      </div>
-      <label style="margin-top:14px;">Comments <textarea id="comments" placeholder="Shift comments"></textarea></label>
     </section>
     <section class="submit-card">
       <button id="submitBtn" class="btn primary">Submit Shift Sheet</button>
@@ -100,10 +117,6 @@
           </tr>
           <tr>
             <td class="label">Paste Runner</td><td id="pdf_paste_runner">—</td>
-            <td class="label">Started Pouring</td><td id="pdf_started_pouring">—</td>
-          </tr>
-          <tr>
-            <td class="label">Finished Pouring</td><td id="pdf_finished_pouring">—</td>
             <td class="label"></td><td></td>
           </tr>
         </table>
@@ -119,15 +132,11 @@
 
       <div class="pdf-section">
         <h2 class="pdf-section-title">Level Checks</h2>
-        <div id="pdfLevelsContainer">
-          <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture,
-               one row per current level check, in order. -->
+        <div id="pdfLevelsContainer" class="pdf-level-list">
+          <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture.
+               Only levels with a name entered are shown; empty rows are
+               omitted. -->
         </div>
-      </div>
-
-      <div class="pdf-section">
-        <h2 class="pdf-section-title">Shift Comments</h2>
-        <div class="pdf-comments-box" id="pdf_comments">—</div>
       </div>
 
       <div class="pdf-footer">

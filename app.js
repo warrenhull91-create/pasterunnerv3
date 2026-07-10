@@ -66,32 +66,32 @@ function stopeCardTemplate(sid){
   return `
         <div class="stope-card" data-sid="${sid}">
           <div class="stope-card-header">
-            <h3>Stope</h3>
+            <h3 data-stope-heading>NEW STOPE</h3>
             <button type="button" class="remove-stope-btn">Remove Stope</button>
           </div>
 
-          <div class="status-group-label">Stope Status</div>
-          <div class="status-btn-group" role="group">
-            <button type="button" class="status-btn" data-value="Pouring">
-              <span class="status-dot dot-pouring"></span>POURING
+          <label class="stope-name-field">Stope Name
+            <input id="stope_${sid}_name" data-field="stope_name" type="text" placeholder="e.g. 1205 North">
+          </label>
+
+          <div class="status-group-label">Stope Type</div>
+          <div class="status-btn-group two-col" role="group">
+            <button type="button" class="status-btn" data-value="Plug">
+              <span class="status-dot dot-curing"></span>PLUG
             </button>
-            <button type="button" class="status-btn" data-value="Stope Full">
-              <span class="status-dot dot-full"></span>STOPE FULL
-            </button>
-            <button type="button" class="status-btn" data-value="Plug Curing">
-              <span class="status-dot dot-curing"></span>PLUG CURING
-            </button>
-            <button type="button" class="status-btn" data-value="Other">
-              <span class="status-dot dot-other"></span>OTHER
+            <button type="button" class="status-btn" data-value="Body">
+              <span class="status-dot dot-pouring"></span>BODY
             </button>
           </div>
           <input type="hidden" id="stope_${sid}_status" data-field="status" value="">
 
-          <div class="other-status-wrap" data-other-wrap>
-            <label>Other Status Details
-              <textarea id="stope_${sid}_other_details" data-field="other_details" placeholder="Describe the status..."></textarea>
-            </label>
+          <div class="status-group-label">Hot Seating</div>
+          <div class="status-btn-group three-col" role="group">
+            <button type="button" class="hotseat-btn" data-value="AM">AM</button>
+            <button type="button" class="hotseat-btn" data-value="PM">PM</button>
+            <button type="button" class="hotseat-btn" data-value="Both">BOTH</button>
           </div>
+          <input type="hidden" id="stope_${sid}_hot_seating" data-field="hot_seating" value="">
 
           <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope_${sid}_fill_point" data-field="fill_point" type="text" placeholder="e.g. 2.5m"></label>
@@ -103,13 +103,13 @@ function stopeCardTemplate(sid){
           <div class="checklist-divider">Times</div>
           <div class="stope-times-grid">
             <label>Start Time <input id="stope_${sid}_time_start" data-field="time_start" type="time"></label>
-            <label>Plug Started <input id="stope_${sid}_time_plug_started" data-field="time_plug_started" type="time"></label>
-            <label>Plug Finished <input id="stope_${sid}_time_plug_finished" data-field="time_plug_finished" type="time"></label>
-            <label>Pour Started <input id="stope_${sid}_time_pour_started" data-field="time_pour_started" type="time"></label>
             <label>Pour Finished <input id="stope_${sid}_time_pour_finished" data-field="time_pour_finished" type="time"></label>
-            <label>Flush Started <input id="stope_${sid}_time_flush_started" data-field="time_flush_started" type="time"></label>
             <label>Flush Finished <input id="stope_${sid}_time_flush_finished" data-field="time_flush_finished" type="time"></label>
           </div>
+
+          <div class="checklist-divider">Time of Flush</div>
+          <div class="flush-times-list" data-flush-list></div>
+          <button type="button" class="btn ghost add-flush-btn" data-add-flush>+ Add Another Flush</button>
 
           <div class="checklist-divider">Stope Checklist</div>
           <div class="checklist">
@@ -121,7 +121,18 @@ ${checklistRows}
         </div>`;
 }
 
-/* ---------------- ADD / REMOVE / RENUMBER ---------------- */
+function flushRowTemplate(sid, fid, n){
+  return `
+        <div class="flush-time-row" data-flush-row="${fid}">
+          <label class="flush-time-label">
+            <span data-flush-label-text>Time of Flush ${n}</span>
+            <input type="time" id="stope_${sid}_flush_${fid}" data-field="flush_time" data-flush-id="${fid}">
+          </label>
+          <button type="button" class="remove-flush-btn" data-flush-id="${fid}">Remove</button>
+        </div>`;
+}
+
+/* ---------------- ADD / REMOVE ---------------- */
 
 function addStope(){
   stopeUidCounter += 1;
@@ -130,7 +141,7 @@ function addStope(){
   wrapper.innerHTML = stopeCardTemplate(sid).trim();
   const card = wrapper.firstElementChild;
   document.getElementById("stopesContainer").appendChild(card);
-  renumberStopes();
+  addFlushRow(card); // every stope starts with exactly one Time of Flush row
   card.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -140,25 +151,42 @@ function removeStope(card){
     if(key.startsWith(sid + "::")) delete stopePhotos[key];
   });
   card.remove();
-  renumberStopes();
 }
 
-function renumberStopes(){
-  const cards = document.querySelectorAll("#stopesContainer .stope-card");
-  cards.forEach((card, idx) => {
-    const n = idx + 1;
-    card.dataset.displayNumber = n;
+function updateStopeHeading(card){
+  const nameField = card.querySelector('[data-field="stope_name"]');
+  const heading = card.querySelector("[data-stope-heading]");
+  if(!heading) return;
+  const name = (nameField && nameField.value ? nameField.value : "").trim();
+  heading.textContent = name ? `STOPE — ${name.toUpperCase()}` : "NEW STOPE";
+}
 
-    const header = card.querySelector(".stope-card-header h3");
-    if(header) header.textContent = `Stope ${n}`;
+/* ---------------- TIME OF FLUSH (repeatable per stope) ---------------- */
 
-    const statusGroup = card.querySelector(".status-btn-group");
-    if(statusGroup) statusGroup.setAttribute("aria-label", `Stope ${n} status`);
+let flushUidCounter = 0;
 
-    // Stope in position 1 can never be removed, regardless of which
-    // physical card currently occupies that slot.
-    const removeBtn = card.querySelector(".remove-stope-btn");
-    if(removeBtn) removeBtn.style.display = (idx === 0) ? "none" : "";
+function addFlushRow(card){
+  flushUidCounter += 1;
+  const fid = flushUidCounter;
+  const sid = card.dataset.sid;
+  const list = card.querySelector("[data-flush-list]");
+  const n = list.querySelectorAll(".flush-time-row").length + 1;
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = flushRowTemplate(sid, fid, n).trim();
+  list.appendChild(wrapper.firstElementChild);
+  renumberFlushRows(card);
+}
+
+function removeFlushRow(card, row){
+  row.remove();
+  renumberFlushRows(card);
+}
+
+function renumberFlushRows(card){
+  const rows = card.querySelectorAll(".flush-time-row");
+  rows.forEach((row, idx) => {
+    const labelText = row.querySelector("[data-flush-label-text]");
+    if(labelText) labelText.textContent = `Time of Flush ${idx + 1}`;
   });
 }
 
@@ -239,9 +267,17 @@ function handleStatusButtonClick(btn){
   card.querySelectorAll(".status-btn").forEach(b => {
     b.classList.toggle("active", b === btn);
   });
+}
 
-  const otherWrap = card.querySelector("[data-other-wrap]");
-  if(otherWrap) otherWrap.classList.toggle("show", value === "Other");
+function handleHotSeatingClick(btn){
+  const card = btn.closest(".stope-card");
+  const value = btn.dataset.value;
+  const hidden = card.querySelector('[data-field="hot_seating"]');
+  if(hidden) hidden.value = value;
+
+  card.querySelectorAll(".hotseat-btn").forEach(b => {
+    b.classList.toggle("active", b === btn);
+  });
 }
 
 function handleChecklistCycleClick(btn){
@@ -269,18 +305,35 @@ function initStopesContainerEvents(){
   const container = document.getElementById("stopesContainer");
 
   container.addEventListener("click", (e) => {
+    const hotseatBtn = e.target.closest(".hotseat-btn");
+    if(hotseatBtn){ handleHotSeatingClick(hotseatBtn); return; }
+
     const statusBtn = e.target.closest(".status-btn");
     if(statusBtn){ handleStatusButtonClick(statusBtn); return; }
 
     const cycleBtn = e.target.closest(".checklist-cycle-btn");
     if(cycleBtn){ handleChecklistCycleClick(cycleBtn); return; }
 
+    const addFlushBtn = e.target.closest(".add-flush-btn");
+    if(addFlushBtn){
+      const card = addFlushBtn.closest(".stope-card");
+      addFlushRow(card);
+      return;
+    }
+
+    const removeFlushBtn = e.target.closest(".remove-flush-btn");
+    if(removeFlushBtn){
+      const card = removeFlushBtn.closest(".stope-card");
+      const row = removeFlushBtn.closest(".flush-time-row");
+      const rows = card.querySelectorAll(".flush-time-row");
+      if(rows.length <= 1) return; // keep at least one Time of Flush row
+      removeFlushRow(card, row);
+      return;
+    }
+
     const removeBtn = e.target.closest(".remove-stope-btn");
     if(removeBtn){
       const card = removeBtn.closest(".stope-card");
-      const cards = container.querySelectorAll(".stope-card");
-      if(cards.length <= 1) return; // always keep at least one stope
-      if(Array.from(cards).indexOf(card) === 0) return; // Stope 1 can't be removed
       if(confirm("Remove this stope and all its data?")){
         removeStope(card);
       }
@@ -307,6 +360,12 @@ function initStopesContainerEvents(){
     }
   });
 
+  container.addEventListener("input", (e) => {
+    if(e.target.matches('[data-field="stope_name"]')){
+      updateStopeHeading(e.target.closest(".stope-card"));
+    }
+  });
+
   container.addEventListener("change", (e) => {
     if(e.target.matches(".photo-file-input")){
       const field = e.target.dataset.photoInput;
@@ -320,152 +379,51 @@ function initStopesContainerEvents(){
 }
 
 /* ============================================================
-   DYNAMIC LEVEL CHECKS
-   Same pattern as the stope cards: a permanent unique id (lid)
-   per row for DOM uniqueness, display numbering computed from
-   DOM position so add/remove/renumber is always consistent.
+   LEVEL CHECKS (fixed 6 rows)
+   No add/remove — exactly six static rows already in the HTML
+   (level_1_name .. level_6_name / level_1_time .. level_6_time).
+   Timestamp is captured automatically on blur, never typed by
+   the operator, and is read-only in the UI.
    ============================================================ */
-let levelUidCounter = 0;
 
-function levelCardTemplate(lid){
-  return `
-        <div class="level-card" data-lid="${lid}">
-          <div class="level-card-header">
-            <h3>Level Check</h3>
-            <button type="button" class="remove-stope-btn remove-level-btn">Remove Level</button>
-          </div>
-
-          <label>Level <input id="level_${lid}_name" data-field="level_name" type="text" placeholder="e.g. 450 Level"></label>
-
-          <div class="level-status-group">
-            <button type="button" class="level-status-btn level-status-checked" data-value="Checked">✅ CHECKED</button>
-            <button type="button" class="level-status-btn level-status-cant" data-value="Cant Access">🚫 CAN'T ACCESS</button>
-          </div>
-          <input type="hidden" id="level_${lid}_status" data-field="status" value="">
-          <input type="hidden" id="level_${lid}_timestamp" data-field="timestamp" value="">
-
-          <div class="level-timestamp" data-timestamp-display style="display:none;"></div>
-
-          <div class="level-reason-wrap" data-reason-wrap>
-            <label>Reason Access Was Not Possible
-              <textarea id="level_${lid}_reason" data-field="cant_access_reason" placeholder="Explain why this level could not be accessed..."></textarea>
-            </label>
-          </div>
-
-          <label class="level-notes">Level Check Notes <textarea id="level_${lid}_notes" data-field="notes" placeholder="Notes..."></textarea></label>
-        </div>`;
+function formatTime24h(date){
+  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-function addLevel(){
-  levelUidCounter += 1;
-  const lid = levelUidCounter;
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = levelCardTemplate(lid).trim();
-  const card = wrapper.firstElementChild;
-  document.getElementById("levelsContainer").appendChild(card);
-  renumberLevels();
-  card.scrollIntoView({ behavior: "smooth", block: "center" });
-}
+function handleLevelNameBlur(nameInput){
+  const row = nameInput.closest(".level-check-row");
+  if(!row) return;
+  const timeDisplay = row.querySelector("[data-level-time]");
+  const fullHidden = row.querySelector("[data-level-full]");
+  const hasText = nameInput.value.trim() !== "";
 
-function removeLevel(card){
-  card.remove();
-  renumberLevels();
-}
+  if(!hasText){
+    // Row cleared — clear its timestamp too, so a later entry starts fresh.
+    if(timeDisplay) timeDisplay.value = "";
+    if(fullHidden) fullHidden.value = "";
+    return;
+  }
 
-function renumberLevels(){
-  const cards = document.querySelectorAll("#levelsContainer .level-card");
-  cards.forEach((card, idx) => {
-    card.dataset.displayNumber = idx + 1;
-    const removeBtn = card.querySelector(".remove-level-btn");
-    if(removeBtn) removeBtn.style.display = (cards.length <= 1) ? "none" : "";
-  });
-}
+  // Only stamp the moment a timestamp doesn't already exist for this row —
+  // minor edits to already-timestamped text must not move the time.
+  if(fullHidden && fullHidden.value){
+    return;
+  }
 
-function formatTimestampNow(){
   const now = new Date();
-  const datePart = now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
-  const timePart = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  return `${datePart}, ${timePart}`;
+  if(timeDisplay) timeDisplay.value = formatTime24h(now);
+  if(fullHidden) fullHidden.value = now.toISOString();
 }
 
-function handleLevelStatusClick(btn){
-  const card = btn.closest(".level-card");
-  const value = btn.dataset.value; // "Checked" | "Cant Access"
-  const statusHidden = card.querySelector('[data-field="status"]');
-  const timestampHidden = card.querySelector('[data-field="timestamp"]');
-  const timestampDisplay = card.querySelector("[data-timestamp-display]");
-  const reasonWrap = card.querySelector("[data-reason-wrap]");
-  const reasonField = card.querySelector('[data-field="cant_access_reason"]');
-
-  // Timestamp is captured at the exact moment of this press, every time
-  // the status is (re)selected — including switching between the two.
-  const stamp = formatTimestampNow();
-  if(statusHidden) statusHidden.value = value;
-  if(timestampHidden) timestampHidden.value = stamp;
-
-  card.querySelectorAll(".level-status-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.value === value);
-  });
-
-  card.classList.toggle("level-card-checked", value === "Checked");
-  card.classList.toggle("level-card-issue", value === "Cant Access");
-
-  if(timestampDisplay){
-    timestampDisplay.style.display = "block";
-    timestampDisplay.textContent = (value === "Checked" ? "✅ Checked — " : "🚫 Can't Access — ") + stamp;
-  }
-
-  if(value === "Checked"){
-    if(reasonWrap) reasonWrap.classList.remove("show");
-    if(reasonField){
-      reasonField.value = "";
-      reasonField.classList.remove("field-invalid");
-    }
-  } else {
-    if(reasonWrap) reasonWrap.classList.add("show");
-  }
-}
-
-function initLevelsContainerEvents(){
+function initLevelChecksEvents(){
   const container = document.getElementById("levelsContainer");
+  if(!container) return;
 
-  container.addEventListener("click", (e) => {
-    const statusBtn = e.target.closest(".level-status-btn");
-    if(statusBtn){ handleLevelStatusClick(statusBtn); return; }
-
-    const removeBtn = e.target.closest(".remove-level-btn");
-    if(removeBtn){
-      const card = removeBtn.closest(".level-card");
-      const cards = container.querySelectorAll(".level-card");
-      if(cards.length <= 1) return; // always keep at least one level row
-      if(confirm("Remove this level check?")){
-        removeLevel(card);
-      }
-      return;
+  container.addEventListener("blur", (e) => {
+    if(e.target.matches("[data-level-name]")){
+      handleLevelNameBlur(e.target);
     }
-  });
-
-  container.addEventListener("input", (e) => {
-    if(e.target.matches('[data-field="cant_access_reason"]') && e.target.value.trim()){
-      e.target.classList.remove("field-invalid");
-    }
-  });
-}
-
-/* Returns { valid, firstInvalidField } — checked before submission so a
-   missing "Can't Access" reason blocks submit instead of silently
-   going out incomplete. */
-function validateLevels(){
-  const cards = document.querySelectorAll("#levelsContainer .level-card");
-  for(const card of cards){
-    const status = card.querySelector('[data-field="status"]')?.value || "";
-    const reasonField = card.querySelector('[data-field="cant_access_reason"]');
-    if(status === "Cant Access" && !(reasonField?.value || "").trim()){
-      reasonField?.classList.add("field-invalid");
-      return { valid: false, firstInvalidField: reasonField };
-    }
-  }
-  return { valid: true, firstInvalidField: null };
+  }, true); // capture phase — blur doesn't bubble
 }
 
 /* ============================================================
@@ -488,19 +446,17 @@ function collectReport(isTest=false){
 
     const stope = {
       stope_number: idx + 1,
-      status: getVal("status"),
-      other_details: getVal("other_details"),
+      stope_name: getVal("stope_name"),
+      status: getVal("status"), // "Plug" | "Body"
+      hot_seating: getVal("hot_seating"), // "AM" | "PM" | "Both"
       fill_point: getVal("fill_point"),
       total_m3: getVal("total_m3"),
       plug_m3: getVal("plug_m3"),
       poured_m3: getVal("poured_m3"),
       time_start: getVal("time_start"),
-      time_plug_started: getVal("time_plug_started"),
-      time_plug_finished: getVal("time_plug_finished"),
-      time_pour_started: getVal("time_pour_started"),
       time_pour_finished: getVal("time_pour_finished"),
-      time_flush_started: getVal("time_flush_started"),
       time_flush_finished: getVal("time_flush_finished"),
+      flush_times: Array.from(card.querySelectorAll('[data-field="flush_time"]')).map(el => (el.value || "").trim()),
       delays: getVal("delays"),
       general_notes: getVal("general_notes")
     };
@@ -514,20 +470,12 @@ function collectReport(isTest=false){
     return stope;
   });
 
-  const levels = Array.from(document.querySelectorAll("#levelsContainer .level-card")).map((card, idx) => {
-    const getVal = (field) => {
-      const el = card.querySelector(`[data-field="${field}"]`);
-      return (el && el.value ? el.value : "").trim();
-    };
-    return {
-      level_number: idx + 1,
-      level_name: getVal("level_name"),
-      status: getVal("status"),
-      timestamp: getVal("timestamp"),
-      cant_access_reason: getVal("cant_access_reason"),
-      notes: getVal("notes")
-    };
-  });
+  const levels = [1, 2, 3, 4, 5, 6].map(n => ({
+    level_number: n,
+    level_name: val(`level_${n}_name`),
+    time: val(`level_${n}_time`),
+    timestamp_full: val(`level_${n}_timestamp_full`)
+  }));
 
   return {
     isTest,
@@ -537,9 +485,6 @@ function collectReport(isTest=false){
     shift_boss: val("shift_boss"),
     plant_operator: val("plant_operator"),
     paste_runner: val("paste_runner"),
-    started_pouring: val("started_pouring"),
-    finished_pouring: val("finished_pouring"),
-    comments: val("comments") || (isTest ? "Test submission from Paste Runner V3." : ""),
     stopes,
     levels
   };
@@ -560,12 +505,13 @@ function setStatus(type, msg){
 
 const PDF_STATUS_META = {
   "OK": "pill-ok",
-  "Pouring": "pill-ok",
+  "Body": "pill-ok",
   "Requires Attention": "pill-warn",
-  "Stope Full": "pill-warn",
-  "Plug Curing": "pill-curing",
+  "Plug": "pill-curing",
   "N/A": "pill-na",
-  "Other": "pill-na"
+  "AM": "pill-info",
+  "PM": "pill-info",
+  "Both": "pill-info"
 };
 
 function escapeHtml(str){
@@ -607,20 +553,30 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>`;
   }).join("");
 
+  const flushTimes = (stope.flush_times && stope.flush_times.length) ? stope.flush_times : [""];
+  const flushRows = flushTimes.map((t, i) => `
+            <tr>
+              <td class="label">Time of Flush ${i + 1}</td><td>${pdfTextOrDash(t)}</td>
+              <td class="label"></td><td></td>
+            </tr>`).join("");
+
+  const heading = stope.stope_name ? escapeHtml(stope.stope_name.toUpperCase()) : "NEW STOPE";
+
   return `
         <div class="pdf-stope-card">
           <div class="pdf-stope-head">
-            <h3>Stope ${n}</h3>
+            <h3>STOPE — ${heading}</h3>
+            <span class="pdf-stope-id">Stope Entry ${n}</span>
           </div>
 
           <div class="pdf-status-row">
             <div>
-              <span>Stope Status</span>
+              <span>Stope Type</span>
               ${pdfPillHTML(stope.status, "Not Set")}
             </div>
             <div class="pdf-status-other">
-              <span>Other Status Details</span>
-              <span>${pdfTextOrDash(stope.other_details)}</span>
+              <span>Hot Seating</span>
+              ${pdfPillHTML(stope.hot_seating, "Not Set")}
             </div>
           </div>
 
@@ -639,20 +595,12 @@ function buildPdfStopeCardHTML(stope, n){
           <table class="pdf-table pdf-metrics-table">
             <tr>
               <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
-              <td class="label">Plug Started</td><td>${pdfTextOrDash(stope.time_plug_started)}</td>
-            </tr>
-            <tr>
-              <td class="label">Plug Finished</td><td>${pdfTextOrDash(stope.time_plug_finished)}</td>
-              <td class="label">Pour Started</td><td>${pdfTextOrDash(stope.time_pour_started)}</td>
-            </tr>
-            <tr>
               <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
-              <td class="label">Flush Started</td><td>${pdfTextOrDash(stope.time_flush_started)}</td>
             </tr>
             <tr>
               <td class="label">Flush Finished</td><td>${pdfTextOrDash(stope.time_flush_finished)}</td>
               <td class="label"></td><td></td>
-            </tr>
+            </tr>${flushRows}
           </table>
 
           <div class="pdf-checklist-title">Stope Checklist</div>
@@ -685,43 +633,14 @@ function waitForImages(container){
   }));
 }
 
-const LEVEL_STATUS_META = {
-  "Checked": "pill-ok",
-  "Cant Access": "pill-warn"
-};
-
-function buildPdfLevelCardHTML(level, n){
-  const status = level.status || "";
-  const cls = status ? (LEVEL_STATUS_META[status] || "pill-na") : "pill-na";
-  const statusLabel = status === "Cant Access" ? "Can't Access" : (status || "Not Set");
-
-  return `
-        <div class="pdf-stope-card">
-          <div class="pdf-stope-head">
-            <h3>${pdfTextOrDash(level.level_name || `Level ${n}`)}</h3>
-            <span class="pdf-stope-id">Level Check ${n}</span>
-          </div>
-
-          <div class="pdf-status-row">
-            <div>
-              <span>Status</span>
-              <span class="pdf-pill ${cls}">${escapeHtml(statusLabel)}</span>
-            </div>
-            <div class="pdf-status-other">
-              <span>Timestamp</span>
-              <span>${pdfTextOrDash(level.timestamp)}</span>
-            </div>
-          </div>
-
-          <div class="pdf-comments-inline">
-            <span class="pdf-comments-label">Reason Access Was Not Possible</span>
-            <span>${pdfTextOrDash(level.cant_access_reason)}</span>
-          </div>
-          <div class="pdf-comments-inline">
-            <span class="pdf-comments-label">Level Check Notes</span>
-            <span>${pdfTextOrDash(level.notes)}</span>
-          </div>
-        </div>`;
+function buildPdfLevelListHTML(levels){
+  const filled = (levels || []).filter(lvl => (lvl.level_name || "").trim() !== "");
+  if(filled.length === 0){
+    return `<div class="pdf-level-empty">No level checks recorded.</div>`;
+  }
+  return filled.map(lvl =>
+    `<div class="pdf-level-row"><span>${escapeHtml(lvl.level_name)}</span><span>${pdfTextOrDash(lvl.time)}</span></div>`
+  ).join("");
 }
 
 async function populatePdfTemplate(report){
@@ -731,9 +650,6 @@ async function populatePdfTemplate(report){
   pdfSetText("pdf_shift_boss", report.shift_boss);
   pdfSetText("pdf_plant_operator", report.plant_operator);
   pdfSetText("pdf_paste_runner", report.paste_runner);
-  pdfSetText("pdf_started_pouring", report.started_pouring);
-  pdfSetText("pdf_finished_pouring", report.finished_pouring);
-  pdfSetText("pdf_comments", report.comments);
   pdfSetText("pdf_generated_at", new Date().toLocaleString());
 
   const stopesContainer = document.getElementById("pdfStopesContainer");
@@ -743,9 +659,7 @@ async function populatePdfTemplate(report){
 
   const levelsContainer = document.getElementById("pdfLevelsContainer");
   if(levelsContainer){
-    levelsContainer.innerHTML = (report.levels || [])
-      .map((level, idx) => buildPdfLevelCardHTML(level, idx + 1))
-      .join("");
+    levelsContainer.innerHTML = buildPdfLevelListHTML(report.levels);
   }
 
   // Photos are embedded as <img src="data:..."> — make sure they've
@@ -818,16 +732,6 @@ function blobToBase64(blob){
 
 async function submitReport(isTest=false){
   try{
-    const levelCheck = validateLevels();
-    if(!levelCheck.valid){
-      setStatus("bad", "Please explain why this level could not be accessed.");
-      if(levelCheck.firstInvalidField){
-        levelCheck.firstInvalidField.scrollIntoView({ behavior: "smooth", block: "center" });
-        levelCheck.firstInvalidField.focus();
-      }
-      return;
-    }
-
     setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
     const report = collectReport(isTest);
 
@@ -871,10 +775,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("submitBtn").addEventListener("click", () => submitReport(false));
   document.getElementById("testBtn").addEventListener("click", () => submitReport(true));
   document.getElementById("addStopeBtn").addEventListener("click", () => addStope());
-  document.getElementById("addLevelBtn").addEventListener("click", () => addLevel());
 
   initStopesContainerEvents();
-  initLevelsContainerEvents();
-  addStope(); // seed the form with exactly one stope card (Stope 1)
-  addLevel(); // seed the form with exactly one level check row
+  initLevelChecksEvents();
+  // No stope card is seeded — the form opens with zero stopes, per spec.
+  // The Level Checks card is static (6 fixed rows, already in the HTML).
 });

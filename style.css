@@ -276,22 +276,16 @@ textarea{
   font-size: 1rem;
 }
 
-.stope-id-inline{
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.68rem;
-  min-width: 160px;
+.stope-name-field{
+  margin-top: -2px;
+}
+.stope-name-field input{
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px 14px;
 }
 
-.stope-id-inline input{
-  padding: 9px 10px;
-  font-size: 0.85rem;
-  width: auto;
-  min-width: 120px;
-}
-
-/* ---- Stope Status buttons ---- */
+/* ---- Stope Status / Hot Seating buttons ---- */
 .status-group-label{
   font-size: 0.7rem;
   font-weight: 800;
@@ -307,7 +301,14 @@ textarea{
   gap: 10px;
 }
 
-.status-btn{
+.status-btn-group.two-col{
+  grid-template-columns: 1fr 1fr !important;
+}
+.status-btn-group.three-col{
+  grid-template-columns: 1fr 1fr 1fr !important;
+}
+
+.status-btn, .hotseat-btn{
   display:flex;
   align-items:center;
   justify-content:center;
@@ -328,11 +329,11 @@ textarea{
   touch-action: manipulation;
 }
 
-.status-btn:active{
+.status-btn:active, .hotseat-btn:active{
   transform: scale(0.97);
 }
 
-.status-btn.active{
+.status-btn.active, .hotseat-btn.active{
   border-color: var(--safety-yellow);
   background: var(--charcoal-600);
   color: #ffffff;
@@ -352,15 +353,51 @@ textarea{
 .dot-curing{ background:#ff9f1c; }
 .dot-other{ background:#9aa4ad; }
 
-.other-status-wrap{
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height .28s ease, opacity .2s ease, margin .28s ease;
+/* ---- Time of Flush (repeatable) ---- */
+.flush-times-list{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
 }
-.other-status-wrap.show{
-  max-height: 240px;
-  opacity: 1;
+
+.flush-time-row{
+  display:flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--charcoal-800);
+  border: 1.5px solid var(--charcoal-600);
+  border-radius: var(--radius-sm);
+}
+
+.flush-time-label{
+  flex: 1 1 auto;
+}
+
+.remove-flush-btn{
+  flex: 0 0 auto;
+  background: transparent;
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  font-weight: 800;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.remove-flush-btn:active{
+  background: rgba(255,85,85,0.12);
+}
+
+.add-flush-btn{
+  align-self: flex-start;
+  min-height: 48px;
+  padding: 12px 20px;
+  font-size: 0.8rem;
+  border-radius: 10px;
   margin-top: 2px;
 }
 
@@ -488,138 +525,64 @@ textarea{
 }
 
 /* ---------------- LEVEL CHECKS ---------------- */
-.level-grid{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-.level-card{
-  background: var(--charcoal-700);
-  border: 1px solid var(--charcoal-600);
-  border-left: 5px solid var(--grey-500);
-  border-radius: var(--radius);
-  padding: 18px 16px 20px;
+.level-check-table{
   display:flex;
   flex-direction:column;
-  gap:14px;
-  transition: border-color .2s ease, background .2s ease;
-  box-shadow: var(--shadow-card);
+  gap: 12px;
 }
 
-.level-card.level-card-checked{
-  border-left-color: #2ecc71;
-}
-.level-card.level-card-issue{
-  border-left-color: var(--danger);
-  background: rgba(255,85,85,0.06);
-}
-
-.level-card-header{
+.level-check-row{
   display:flex;
-  align-items:center;
-  justify-content:space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 14px;
+  background: var(--charcoal-700);
+  border: 1.5px solid var(--charcoal-600);
+  border-radius: var(--radius-sm);
 }
 
-.level-card-header h3{
-  margin:0;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 800;
-  color: var(--white);
-  display:flex;
-  align-items:center;
-  gap:8px;
+.level-check-level{
+  flex: 2 1 220px;
 }
 
-.level-card-header h3::before{
-  content:"⛰";
+.level-check-time{
+  flex: 1 1 120px;
+}
+
+.level-check-time input{
+  background: var(--charcoal-800);
   color: var(--safety-yellow);
-  font-size: 1rem;
-}
-
-.level-status-group{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.level-status-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 10px;
-  min-height: 58px;
-  padding: 14px 10px;
-  border-radius: 14px;
-  border: 2px solid var(--charcoal-600);
-  background: var(--charcoal-800);
-  color: var(--grey-200);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
+  text-align: center;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-family: var(--font);
-  cursor: pointer;
-  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .08s ease;
-  touch-action: manipulation;
-}
-.level-status-btn:active{
-  transform: scale(0.97);
-}
-.level-status-checked.active{
-  border-color: #2ecc71;
-  background: #123524;
-  color: #3ecf8e;
-  box-shadow: 0 0 0 3px rgba(46,204,113,0.22);
-}
-.level-status-cant.active{
-  border-color: var(--danger);
-  background: #3a1414;
-  color: #ff8a80;
-  box-shadow: 0 0 0 3px rgba(255,85,85,0.22);
+  cursor: default;
 }
 
-.level-timestamp{
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--grey-300);
-  background: var(--charcoal-800);
-  border: 1px solid var(--charcoal-600);
-  border-radius: 10px;
+/* ---------------- PDF LEVEL CHECK LIST ---------------- */
+.pdf-level-list{
+  padding: 6px 32px 20px;
+}
+.pdf-level-row{
+  display:flex;
+  justify-content: space-between;
   padding: 10px 14px;
-  letter-spacing: 0.02em;
+  border: 1px solid #dcdfe2;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #1b1e22;
 }
-
-.level-reason-wrap{
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height .28s ease, opacity .2s ease, margin .28s ease;
+.pdf-level-row span:last-child{
+  font-weight: 700;
+  color: #121519;
 }
-.level-reason-wrap.show{
-  max-height: 260px;
-  opacity: 1;
-  margin-top: 2px;
-}
-.level-reason-wrap label{
-  color: var(--danger);
-}
-.level-reason-wrap textarea{
-  border-color: rgba(255,85,85,0.4);
-  min-height: 100px;
-}
-
-.level-notes textarea{
-  min-height: 100px;
-}
-
-.field-invalid{
-  border-color: var(--danger) !important;
-  box-shadow: 0 0 0 3px rgba(255,85,85,0.3) !important;
+.pdf-level-empty{
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #8b939b;
+  font-style: italic;
 }
 
 /* ---- Add / Remove Stope ---- */
