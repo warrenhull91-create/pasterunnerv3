@@ -353,6 +353,18 @@ textarea{
 .dot-curing{ background:#ff9f1c; }
 .dot-other{ background:#9aa4ad; }
 
+.other-status-wrap{
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height .28s ease, opacity .2s ease, margin .28s ease;
+}
+.other-status-wrap.show{
+  max-height: 240px;
+  opacity: 1;
+  margin-top: 2px;
+}
+
 /* ---- Time of Flush (repeatable) ---- */
 .flush-times-list{
   display:flex;
@@ -362,16 +374,26 @@ textarea{
 
 .flush-time-row{
   display:flex;
-  align-items: flex-end;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   padding: 12px 14px;
   background: var(--charcoal-800);
   border: 1.5px solid var(--charcoal-600);
   border-radius: var(--radius-sm);
 }
 
+.flush-time-row-top{
+  display:flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .flush-time-label{
   flex: 1 1 auto;
+}
+
+.flush-comments-field textarea{
+  min-height: 70px;
 }
 
 .remove-flush-btn{

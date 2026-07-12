@@ -88,6 +88,12 @@ function stopeCardTemplate(sid){
           </div>
           <input type="hidden" id="stope_${sid}_status" data-field="status" value="">
 
+          <div class="other-status-wrap" data-status-other-wrap>
+            <label>Describe Stope Type
+              <textarea id="stope_${sid}_status_other_comments" data-field="status_other_comments" placeholder="Describe the stope type..."></textarea>
+            </label>
+          </div>
+
           <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope_${sid}_fill_point" data-field="fill_point" type="text" placeholder="e.g. 2.5m"></label>
             <label>Total m³ <input id="stope_${sid}_total_m3" data-field="total_m3" type="number" step="0.1" placeholder="0.0"></label>
@@ -95,11 +101,18 @@ function stopeCardTemplate(sid){
             <label>Poured m³ <input id="stope_${sid}_poured_m3" data-field="poured_m3" type="number" step="0.1" placeholder="0.0"></label>
           </div>
 
+          <div class="status-group-label">Plug Complete</div>
+          <div class="status-btn-group two-col" role="group">
+            <button type="button" class="hotseat-btn" data-hotseat-field="plug_complete" data-value="Yes">YES</button>
+            <button type="button" class="hotseat-btn" data-hotseat-field="plug_complete" data-value="No">NO</button>
+          </div>
+          <input type="hidden" id="stope_${sid}_plug_complete" data-field="plug_complete" value="">
+
           <div class="checklist-divider">Times</div>
           <div class="stope-times-grid">
             <label>Start Time <input id="stope_${sid}_time_start" data-field="time_start" type="time"></label>
           </div>
-          <div class="status-group-label">Hot Seating at Start</div>
+          <div class="status-group-label">Hot Seating Start of Shift?</div>
           <div class="status-btn-group two-col" role="group">
             <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_start" data-value="Yes">YES</button>
             <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_start" data-value="No">NO</button>
@@ -109,7 +122,7 @@ function stopeCardTemplate(sid){
           <div class="stope-times-grid">
             <label>Pour Finished <input id="stope_${sid}_time_pour_finished" data-field="time_pour_finished" type="time"></label>
           </div>
-          <div class="status-group-label">Hot Seating at Pour Finished</div>
+          <div class="status-group-label">Hot Seating over Shift Change?</div>
           <div class="status-btn-group two-col" role="group">
             <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_pour_finished" data-value="Yes">YES</button>
             <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_pour_finished" data-value="No">NO</button>
@@ -119,7 +132,6 @@ function stopeCardTemplate(sid){
           <div class="checklist-divider">Time of Flush</div>
           <div class="flush-times-list" data-flush-list></div>
           <button type="button" class="btn ghost add-flush-btn" data-add-flush>+ Add Another Flush</button>
-          <label class="stope-comments">Comments <textarea id="stope_${sid}_flush_comments" data-field="flush_comments" placeholder="Notes about the flush..."></textarea></label>
 
           <div class="checklist-divider">Level Checks</div>
           <div class="level-entries-list" data-level-entries></div>
@@ -138,11 +150,16 @@ ${checklistRows}
 function flushRowTemplate(sid, fid, n){
   return `
         <div class="flush-time-row" data-flush-row="${fid}">
-          <label class="flush-time-label">
-            <span data-flush-label-text>Time of Flush ${n}</span>
-            <input type="time" id="stope_${sid}_flush_${fid}" data-field="flush_time" data-flush-id="${fid}">
+          <div class="flush-time-row-top">
+            <label class="flush-time-label">
+              <span data-flush-label-text>Time of Flush ${n}</span>
+              <input type="time" id="stope_${sid}_flush_${fid}" data-field="flush_time" data-flush-id="${fid}">
+            </label>
+            <button type="button" class="remove-flush-btn" data-flush-id="${fid}">Remove</button>
+          </div>
+          <label class="flush-comments-field">Comments
+            <textarea id="stope_${sid}_flush_${fid}_comments" data-field="flush_comments" data-flush-id="${fid}" placeholder="Notes about this flush..."></textarea>
           </label>
-          <button type="button" class="remove-flush-btn" data-flush-id="${fid}">Remove</button>
         </div>`;
 }
 
@@ -282,6 +299,9 @@ function handleStatusButtonClick(btn){
   card.querySelectorAll(".status-btn").forEach(b => {
     b.classList.toggle("active", b === btn);
   });
+
+  const otherWrap = card.querySelector("[data-status-other-wrap]");
+  if(otherWrap) otherWrap.classList.toggle("show", value === "Other");
 }
 
 function handleHotSeatingClick(btn){
@@ -341,8 +361,6 @@ function initStopesContainerEvents(){
     if(removeFlushBtn){
       const card = removeFlushBtn.closest(".stope-card");
       const row = removeFlushBtn.closest(".flush-time-row");
-      const rows = card.querySelectorAll(".flush-time-row");
-      if(rows.length <= 1) return; // keep at least one Time of Flush row
       removeFlushRow(card, row);
       return;
     }
@@ -527,16 +545,24 @@ function collectReport(isTest=false){
       stope_number: idx + 1,
       stope_name: getVal("stope_name"),
       status: getVal("status"), // "Plug" | "Body" | "Other"
+      status_other_comments: getVal("status_other_comments"),
       fill_point: getVal("fill_point"),
       total_m3: getVal("total_m3"),
       plug_m3: getVal("plug_m3"),
+      plug_complete: getVal("plug_complete"), // "Yes" | "No"
       poured_m3: getVal("poured_m3"),
       time_start: getVal("time_start"),
       hot_seating_start: getVal("hot_seating_start"), // "Yes" | "No"
       time_pour_finished: getVal("time_pour_finished"),
       hot_seating_pour_finished: getVal("hot_seating_pour_finished"), // "Yes" | "No"
-      flush_times: Array.from(card.querySelectorAll('[data-field="flush_time"]')).map(el => (el.value || "").trim()),
-      flush_comments: getVal("flush_comments"),
+      flush_entries: Array.from(card.querySelectorAll(".flush-time-row")).map(row => {
+        const timeEl = row.querySelector('[data-field="flush_time"]');
+        const commentsEl = row.querySelector('[data-field="flush_comments"]');
+        return {
+          time: (timeEl && timeEl.value ? timeEl.value : "").trim(),
+          comments: (commentsEl && commentsEl.value ? commentsEl.value : "").trim()
+        };
+      }),
       level_checks: Array.from(card.querySelectorAll(".level-entry")).map((entry, lvIdx) => {
         const nameEl = entry.querySelector('[data-field="level_name"]');
         const checks = [1, 2, 3, 4, 5, 6].map(n => {
@@ -642,11 +668,11 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>`;
   }).join("");
 
-  const flushTimes = (stope.flush_times && stope.flush_times.length) ? stope.flush_times : [""];
-  const flushRows = flushTimes.map((t, i) => `
+  const flushEntries = (stope.flush_entries && stope.flush_entries.length) ? stope.flush_entries : [{ time: "", comments: "" }];
+  const flushRows = flushEntries.map((entry, i) => `
             <tr>
-              <td class="label">Time of Flush ${i + 1}</td><td>${pdfTextOrDash(t)}</td>
-              <td class="label"></td><td></td>
+              <td class="label">Time of Flush ${i + 1}</td><td>${pdfTextOrDash(entry.time)}</td>
+              <td class="label">Comments</td><td>${pdfTextOrDash(entry.comments)}</td>
             </tr>`).join("");
 
   const heading = stope.stope_name ? escapeHtml(stope.stope_name.toUpperCase()) : "NEW STOPE";
@@ -663,6 +689,10 @@ function buildPdfStopeCardHTML(stope, n){
               <span>Stope Type</span>
               ${pdfPillHTML(stope.status, "Not Set")}
             </div>
+            <div class="pdf-status-other">
+              <span>Stope Type Description</span>
+              <span>${pdfTextOrDash(stope.status_other_comments)}</span>
+            </div>
           </div>
 
           <table class="pdf-table pdf-metrics-table">
@@ -674,24 +704,23 @@ function buildPdfStopeCardHTML(stope, n){
               <td class="label">Plug m³</td><td>${pdfTextOrDash(stope.plug_m3)}</td>
               <td class="label">Poured m³</td><td>${pdfTextOrDash(stope.poured_m3)}</td>
             </tr>
+            <tr>
+              <td class="label">Plug Complete</td><td>${pdfPillHTML(stope.plug_complete, "Not Set")}</td>
+              <td class="label"></td><td></td>
+            </tr>
           </table>
 
           <div class="pdf-checklist-title">Times</div>
           <table class="pdf-table pdf-metrics-table">
             <tr>
               <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
-              <td class="label">Hot Seating at Start</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
+              <td class="label">Hot Seating Start of Shift?</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
             </tr>
             <tr>
               <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
-              <td class="label">Hot Seating at Pour Finished</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
+              <td class="label">Hot Seating over Shift Change?</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
             </tr>${flushRows}
           </table>
-
-          <div class="pdf-comments-inline">
-            <span class="pdf-comments-label">Comments</span>
-            <span>${pdfTextOrDash(stope.flush_comments)}</span>
-          </div>
 
           <div class="pdf-checklist-title">Level Checks</div>
           ${buildPdfLevelChecksTableHTML(stope.level_checks)}

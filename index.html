@@ -31,10 +31,10 @@
             <option value="N/S">N/S</option>
           </select>
         </label>
-        <label class="required">Operator <input id="operator" type="text" placeholder="Operator name"></label>
-        <label>Shift Boss <input id="shift_boss" type="text"></label>
-        <label>Plant Operator <input id="plant_operator" type="text"></label>
         <label>Paste Runner <input id="paste_runner" type="text"></label>
+        <label>Plant Operator <input id="plant_operator" type="text"></label>
+        <label class="required">Paste Engineer <input id="operator" type="text" placeholder="Paste Engineer name"></label>
+        <label>Shift Boss <input id="shift_boss" type="text"></label>
       </div>
     </section>
     <section class="card">
@@ -70,18 +70,18 @@
       <div class="pdf-meta-bar">
         <div><span>Date</span><strong id="pdf_shift_date">—</strong></div>
         <div><span>Shift</span><strong id="pdf_shift_type">—</strong></div>
-        <div><span>Operator</span><strong id="pdf_operator">—</strong></div>
+        <div><span>Paste Engineer</span><strong id="pdf_operator">—</strong></div>
       </div>
 
       <div class="pdf-section">
         <h2 class="pdf-section-title">Shift Details</h2>
         <table class="pdf-table">
           <tr>
-            <td class="label">Shift Boss</td><td id="pdf_shift_boss">—</td>
+            <td class="label">Paste Runner</td><td id="pdf_paste_runner">—</td>
             <td class="label">Plant Operator</td><td id="pdf_plant_operator">—</td>
           </tr>
           <tr>
-            <td class="label">Paste Runner</td><td id="pdf_paste_runner">—</td>
+            <td class="label">Shift Boss</td><td id="pdf_shift_boss">—</td>
             <td class="label"></td><td></td>
           </tr>
         </table>
