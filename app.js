@@ -24,7 +24,7 @@ function checklistCycleMeta(state){
   switch(state){
     case "OK": return { icon: "✅", label: "OK", cls: "cycle-ok" };
     case "Requires Attention": return { icon: "❌", label: "Requires Attention", cls: "cycle-issue" };
-    case "N/A": return { icon: "N/A", label: "N/A", cls: "cycle-na" };
+    case "N/A": return { icon: "⊘", label: "N/A", cls: "cycle-na" };
     default: return { icon: "○", label: "Not Checked", cls: "cycle-none" };
   }
 }
@@ -88,14 +88,6 @@ function stopeCardTemplate(sid){
           </div>
           <input type="hidden" id="stope_${sid}_status" data-field="status" value="">
 
-          <div class="status-group-label">Hot Seating</div>
-          <div class="status-btn-group three-col" role="group">
-            <button type="button" class="hotseat-btn" data-value="AM">AM</button>
-            <button type="button" class="hotseat-btn" data-value="PM">PM</button>
-            <button type="button" class="hotseat-btn" data-value="Both">BOTH</button>
-          </div>
-          <input type="hidden" id="stope_${sid}_hot_seating" data-field="hot_seating" value="">
-
           <div class="stope-metrics-grid">
             <label>Level of Fill Point <input id="stope_${sid}_fill_point" data-field="fill_point" type="text" placeholder="e.g. 2.5m"></label>
             <label>Total m³ <input id="stope_${sid}_total_m3" data-field="total_m3" type="number" step="0.1" placeholder="0.0"></label>
@@ -106,13 +98,28 @@ function stopeCardTemplate(sid){
           <div class="checklist-divider">Times</div>
           <div class="stope-times-grid">
             <label>Start Time <input id="stope_${sid}_time_start" data-field="time_start" type="time"></label>
-            <label>Pour Finished <input id="stope_${sid}_time_pour_finished" data-field="time_pour_finished" type="time"></label>
-            <label>Flush Finished <input id="stope_${sid}_time_flush_finished" data-field="time_flush_finished" type="time"></label>
           </div>
+          <div class="status-group-label">Hot Seating at Start</div>
+          <div class="status-btn-group two-col" role="group">
+            <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_start" data-value="Yes">YES</button>
+            <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_start" data-value="No">NO</button>
+          </div>
+          <input type="hidden" id="stope_${sid}_hot_seating_start" data-field="hot_seating_start" value="">
+
+          <div class="stope-times-grid">
+            <label>Pour Finished <input id="stope_${sid}_time_pour_finished" data-field="time_pour_finished" type="time"></label>
+          </div>
+          <div class="status-group-label">Hot Seating at Pour Finished</div>
+          <div class="status-btn-group two-col" role="group">
+            <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_pour_finished" data-value="Yes">YES</button>
+            <button type="button" class="hotseat-btn" data-hotseat-field="hot_seating_pour_finished" data-value="No">NO</button>
+          </div>
+          <input type="hidden" id="stope_${sid}_hot_seating_pour_finished" data-field="hot_seating_pour_finished" value="">
 
           <div class="checklist-divider">Time of Flush</div>
           <div class="flush-times-list" data-flush-list></div>
           <button type="button" class="btn ghost add-flush-btn" data-add-flush>+ Add Another Flush</button>
+          <label class="stope-comments">Comments <textarea id="stope_${sid}_flush_comments" data-field="flush_comments" placeholder="Notes about the flush..."></textarea></label>
 
           <div class="checklist-divider">Level Checks</div>
           <div class="level-entries-list" data-level-entries></div>
@@ -279,11 +286,12 @@ function handleStatusButtonClick(btn){
 
 function handleHotSeatingClick(btn){
   const card = btn.closest(".stope-card");
+  const field = btn.dataset.hotseatField;
   const value = btn.dataset.value;
-  const hidden = card.querySelector('[data-field="hot_seating"]');
+  const hidden = card.querySelector(`[data-field="${field}"]`);
   if(hidden) hidden.value = value;
 
-  card.querySelectorAll(".hotseat-btn").forEach(b => {
+  card.querySelectorAll(`.hotseat-btn[data-hotseat-field="${field}"]`).forEach(b => {
     b.classList.toggle("active", b === btn);
   });
 }
@@ -423,7 +431,7 @@ function formatTime24h(date){
 }
 
 function levelEntryTemplate(sid, lvid){
-  const checkboxes = [1, 2, 3, 4, 5].map(n => `
+  const checkboxes = [1, 2, 3, 4, 5, 6].map(n => `
               <label class="level-check-box">
                 <input type="checkbox" id="stope_${sid}_lvl_${lvid}_check_${n}" data-check-num="${n}">
                 <span class="check-num">${n}</span>
@@ -519,18 +527,19 @@ function collectReport(isTest=false){
       stope_number: idx + 1,
       stope_name: getVal("stope_name"),
       status: getVal("status"), // "Plug" | "Body" | "Other"
-      hot_seating: getVal("hot_seating"), // "AM" | "PM" | "Both"
       fill_point: getVal("fill_point"),
       total_m3: getVal("total_m3"),
       plug_m3: getVal("plug_m3"),
       poured_m3: getVal("poured_m3"),
       time_start: getVal("time_start"),
+      hot_seating_start: getVal("hot_seating_start"), // "Yes" | "No"
       time_pour_finished: getVal("time_pour_finished"),
-      time_flush_finished: getVal("time_flush_finished"),
+      hot_seating_pour_finished: getVal("hot_seating_pour_finished"), // "Yes" | "No"
       flush_times: Array.from(card.querySelectorAll('[data-field="flush_time"]')).map(el => (el.value || "").trim()),
+      flush_comments: getVal("flush_comments"),
       level_checks: Array.from(card.querySelectorAll(".level-entry")).map((entry, lvIdx) => {
         const nameEl = entry.querySelector('[data-field="level_name"]');
-        const checks = [1, 2, 3, 4, 5].map(n => {
+        const checks = [1, 2, 3, 4, 5, 6].map(n => {
           const checkbox = entry.querySelector(`[data-check-num="${n}"]`);
           const timeEl = entry.querySelector(`[data-field="check_${n}_time"]`);
           return {
@@ -590,9 +599,8 @@ const PDF_STATUS_META = {
   "Plug": "pill-curing",
   "Other": "pill-na",
   "N/A": "pill-na",
-  "AM": "pill-info",
-  "PM": "pill-info",
-  "Both": "pill-info"
+  "Yes": "pill-warn",
+  "No": "pill-ok"
 };
 
 function escapeHtml(str){
@@ -655,10 +663,6 @@ function buildPdfStopeCardHTML(stope, n){
               <span>Stope Type</span>
               ${pdfPillHTML(stope.status, "Not Set")}
             </div>
-            <div class="pdf-status-other">
-              <span>Hot Seating</span>
-              ${pdfPillHTML(stope.hot_seating, "Not Set")}
-            </div>
           </div>
 
           <table class="pdf-table pdf-metrics-table">
@@ -676,13 +680,18 @@ function buildPdfStopeCardHTML(stope, n){
           <table class="pdf-table pdf-metrics-table">
             <tr>
               <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
-              <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
+              <td class="label">Hot Seating at Start</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
             </tr>
             <tr>
-              <td class="label">Flush Finished</td><td>${pdfTextOrDash(stope.time_flush_finished)}</td>
-              <td class="label"></td><td></td>
+              <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
+              <td class="label">Hot Seating at Pour Finished</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
             </tr>${flushRows}
           </table>
+
+          <div class="pdf-comments-inline">
+            <span class="pdf-comments-label">Comments</span>
+            <span>${pdfTextOrDash(stope.flush_comments)}</span>
+          </div>
 
           <div class="pdf-checklist-title">Level Checks</div>
           ${buildPdfLevelChecksTableHTML(stope.level_checks)}
@@ -725,6 +734,7 @@ function buildPdfLevelChecksTableHTML(levelChecks){
             <tr>
               <td class="label">Level</td><td class="label">Check 1</td><td class="label">Check 2</td>
               <td class="label">Check 3</td><td class="label">Check 4</td><td class="label">Check 5</td>
+              <td class="label">Check 6</td>
             </tr>${rows}
           </table>`;
 }
