@@ -114,6 +114,10 @@ function stopeCardTemplate(sid){
           <div class="flush-times-list" data-flush-list></div>
           <button type="button" class="btn ghost add-flush-btn" data-add-flush>+ Add Another Flush</button>
 
+          <div class="checklist-divider">Level Checks</div>
+          <div class="level-entries-list" data-level-entries></div>
+          <button type="button" class="btn ghost add-level-entry-btn" data-add-level-entry>+ Add Level</button>
+
           <div class="checklist-divider">Stope Checklist</div>
           <div class="checklist">
 ${checklistRows}
@@ -145,6 +149,7 @@ function addStope(){
   const card = wrapper.firstElementChild;
   document.getElementById("stopesContainer").appendChild(card);
   addFlushRow(card); // every stope starts with exactly one Time of Flush row
+  addLevelEntry(card); // every stope starts with exactly one Level Check row
   card.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -334,6 +339,22 @@ function initStopesContainerEvents(){
       return;
     }
 
+    const addLevelBtn = e.target.closest("[data-add-level-entry]");
+    if(addLevelBtn){
+      addLevelEntry(addLevelBtn.closest(".stope-card"));
+      return;
+    }
+
+    const removeLevelBtn = e.target.closest("[data-remove-level-entry]");
+    if(removeLevelBtn){
+      const card = removeLevelBtn.closest(".stope-card");
+      const entry = removeLevelBtn.closest(".level-entry");
+      if(confirm("Remove this level and its check history?")){
+        removeLevelEntry(card, entry);
+      }
+      return;
+    }
+
     const removeBtn = e.target.closest(".remove-stope-btn");
     if(removeBtn){
       const card = removeBtn.closest(".stope-card");
@@ -370,6 +391,10 @@ function initStopesContainerEvents(){
   });
 
   container.addEventListener("change", (e) => {
+    if(e.target.matches('.level-check-box input[type="checkbox"]')){
+      handleLevelCheckboxChange(e.target);
+      return;
+    }
     if(e.target.matches(".photo-file-input")){
       const field = e.target.dataset.photoInput;
       const card = e.target.closest(".stope-card");
@@ -382,53 +407,93 @@ function initStopesContainerEvents(){
 }
 
 /* ============================================================
-   LEVEL CHECKS (fixed 6 rows)
-   Restored to the original design: one dedicated card, six
-   static rows, each with a Level field and an automatic
-   read-only timestamp. No add/remove — exactly six rows already
-   in the HTML (level_1_name .. level_6_name / level_1_time ..
-   level_6_time). Timestamp is captured automatically on blur,
-   never typed by the operator.
+   LEVEL CHECKS (per stope)
+   Each Stope card gets its own Level Checks subsection: up to 8
+   levels, each with 5 independent inspection checkboxes. Ticking
+   a checkbox stamps the current time beside it; unticking clears
+   only that checkbox's timestamp. The level name is typed once
+   and stays visible for the rest of the shift.
    ============================================================ */
+
+const LEVEL_CHECKS_MAX = 8;
+let levelEntryUidCounter = 0;
 
 function formatTime24h(date){
   return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-function handleLevelNameBlur(nameInput){
-  const row = nameInput.closest(".level-check-row");
-  if(!row) return;
-  const timeDisplay = row.querySelector("[data-level-time]");
-  const fullHidden = row.querySelector("[data-level-full]");
-  const hasText = nameInput.value.trim() !== "";
+function levelEntryTemplate(sid, lvid){
+  const checkboxes = [1, 2, 3, 4, 5].map(n => `
+              <label class="level-check-box">
+                <input type="checkbox" id="stope_${sid}_lvl_${lvid}_check_${n}" data-check-num="${n}">
+                <span class="check-num">${n}</span>
+                <span class="check-time" data-check-time="${n}">—</span>
+              </label>
+              <input type="hidden" id="stope_${sid}_lvl_${lvid}_check_${n}_time" data-field="check_${n}_time" value="">`).join("");
 
-  if(!hasText){
-    // Row cleared — clear its timestamp too, so a later entry starts fresh.
-    if(timeDisplay) timeDisplay.value = "";
-    if(fullHidden) fullHidden.value = "";
-    return;
-  }
-
-  // Only stamp the moment a timestamp doesn't already exist for this row —
-  // minor edits to already-timestamped text must not move the time.
-  if(fullHidden && fullHidden.value){
-    return;
-  }
-
-  const now = new Date();
-  if(timeDisplay) timeDisplay.value = formatTime24h(now);
-  if(fullHidden) fullHidden.value = now.toISOString();
+  return `
+        <div class="level-entry" data-lvid="${lvid}">
+          <div class="level-entry-row">
+            <label class="level-entry-name">Level
+              <input type="text" id="stope_${sid}_lvl_${lvid}_name" data-field="level_name" placeholder="e.g. 3550">
+            </label>
+            <button type="button" class="remove-level-entry-btn" data-remove-level-entry>Remove</button>
+          </div>
+          <div class="level-checks-row">${checkboxes}
+          </div>
+        </div>`;
 }
 
-function initLevelChecksEvents(){
-  const container = document.getElementById("levelsContainer");
-  if(!container) return;
+function addLevelEntry(card){
+  const list = card.querySelector("[data-level-entries]");
+  if(!list) return;
+  if(list.querySelectorAll(".level-entry").length >= LEVEL_CHECKS_MAX) return;
 
-  container.addEventListener("blur", (e) => {
-    if(e.target.matches("[data-level-name]")){
-      handleLevelNameBlur(e.target);
-    }
-  }, true); // capture phase — blur doesn't bubble
+  const sid = card.dataset.sid;
+  levelEntryUidCounter += 1;
+  const lvid = levelEntryUidCounter;
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = levelEntryTemplate(sid, lvid).trim();
+  list.appendChild(wrapper.firstElementChild);
+  updateAddLevelButtonState(card);
+}
+
+function removeLevelEntry(card, entry){
+  const list = card.querySelector("[data-level-entries]");
+  if(list && list.querySelectorAll(".level-entry").length <= 1) return; // keep at least one level row
+  entry.remove();
+  updateAddLevelButtonState(card);
+}
+
+function updateAddLevelButtonState(card){
+  const list = card.querySelector("[data-level-entries]");
+  const addBtn = card.querySelector("[data-add-level-entry]");
+  if(!list || !addBtn) return;
+  const count = list.querySelectorAll(".level-entry").length;
+  const atMax = count >= LEVEL_CHECKS_MAX;
+  addBtn.disabled = atMax;
+  addBtn.textContent = atMax ? `Maximum ${LEVEL_CHECKS_MAX} Levels Reached` : "+ Add Level";
+}
+
+function handleLevelCheckboxChange(checkbox){
+  const num = checkbox.dataset.checkNum;
+  const entry = checkbox.closest(".level-entry");
+  if(!entry) return;
+  const timeHidden = entry.querySelector(`[data-field="check_${num}_time"]`);
+  const timeDisplay = entry.querySelector(`[data-check-time="${num}"]`);
+  const checkBoxLabel = checkbox.closest(".level-check-box");
+
+  if(checkbox.checked){
+    const stamp = formatTime24h(new Date());
+    if(timeHidden) timeHidden.value = stamp;
+    if(timeDisplay) timeDisplay.textContent = stamp;
+  } else {
+    // Unticking clears only this checkbox's own timestamp — the others
+    // on the same level are untouched.
+    if(timeHidden) timeHidden.value = "";
+    if(timeDisplay) timeDisplay.textContent = "—";
+  }
+  if(checkBoxLabel) checkBoxLabel.classList.toggle("checked-visual", checkbox.checked);
 }
 
 
@@ -453,7 +518,7 @@ function collectReport(isTest=false){
     const stope = {
       stope_number: idx + 1,
       stope_name: getVal("stope_name"),
-      status: getVal("status"), // "Plug" | "Body"
+      status: getVal("status"), // "Plug" | "Body" | "Other"
       hot_seating: getVal("hot_seating"), // "AM" | "PM" | "Both"
       fill_point: getVal("fill_point"),
       total_m3: getVal("total_m3"),
@@ -463,6 +528,23 @@ function collectReport(isTest=false){
       time_pour_finished: getVal("time_pour_finished"),
       time_flush_finished: getVal("time_flush_finished"),
       flush_times: Array.from(card.querySelectorAll('[data-field="flush_time"]')).map(el => (el.value || "").trim()),
+      level_checks: Array.from(card.querySelectorAll(".level-entry")).map((entry, lvIdx) => {
+        const nameEl = entry.querySelector('[data-field="level_name"]');
+        const checks = [1, 2, 3, 4, 5].map(n => {
+          const checkbox = entry.querySelector(`[data-check-num="${n}"]`);
+          const timeEl = entry.querySelector(`[data-field="check_${n}_time"]`);
+          return {
+            check_number: n,
+            checked: !!(checkbox && checkbox.checked),
+            time: (timeEl && timeEl.value ? timeEl.value : "").trim()
+          };
+        });
+        return {
+          level_number: lvIdx + 1,
+          level_name: (nameEl && nameEl.value ? nameEl.value : "").trim(),
+          checks
+        };
+      }),
       delays: getVal("delays"),
       general_notes: getVal("general_notes")
     };
@@ -476,13 +558,6 @@ function collectReport(isTest=false){
     return stope;
   });
 
-  const levels = [1, 2, 3, 4, 5, 6].map(n => ({
-    level_number: n,
-    level_name: val(`level_${n}_name`),
-    time: val(`level_${n}_time`),
-    timestamp_full: val(`level_${n}_timestamp_full`)
-  }));
-
   return {
     isTest,
     shift_date: val("shift_date") || today,
@@ -491,8 +566,7 @@ function collectReport(isTest=false){
     shift_boss: val("shift_boss"),
     plant_operator: val("plant_operator"),
     paste_runner: val("paste_runner"),
-    stopes,
-    levels
+    stopes
   };
 }
 
@@ -610,6 +684,9 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>${flushRows}
           </table>
 
+          <div class="pdf-checklist-title">Level Checks</div>
+          ${buildPdfLevelChecksTableHTML(stope.level_checks)}
+
           <div class="pdf-checklist-title">Stope Checklist</div>
           <table class="pdf-table pdf-checklist-table">
             <tr>
@@ -628,6 +705,30 @@ function buildPdfStopeCardHTML(stope, n){
         </div>`;
 }
 
+function buildPdfLevelChecksTableHTML(levelChecks){
+  const relevant = (levelChecks || []).filter(lvl =>
+    (lvl.level_name || "").trim() || (lvl.checks || []).some(c => c.checked)
+  );
+  if(relevant.length === 0){
+    return `<div class="pdf-level-empty">No level checks recorded for this stope.</div>`;
+  }
+
+  const rows = relevant.map(lvl => {
+    const cells = (lvl.checks || []).map(c =>
+      `<td>${c.checked ? `✓ ${escapeHtml(c.time || "")}` : "—"}</td>`
+    ).join("");
+    return `<tr><td class="label">${pdfTextOrDash(lvl.level_name)}</td>${cells}</tr>`;
+  }).join("");
+
+  return `
+          <table class="pdf-table pdf-level-checks-table">
+            <tr>
+              <td class="label">Level</td><td class="label">Check 1</td><td class="label">Check 2</td>
+              <td class="label">Check 3</td><td class="label">Check 4</td><td class="label">Check 5</td>
+            </tr>${rows}
+          </table>`;
+}
+
 function waitForImages(container){
   const imgs = Array.from(container.querySelectorAll("img"));
   if(imgs.length === 0) return Promise.resolve();
@@ -638,16 +739,6 @@ function waitForImages(container){
       img.addEventListener("error", resolve, { once: true });
     });
   }));
-}
-
-function buildPdfLevelListHTML(levels){
-  const filled = (levels || []).filter(lvl => (lvl.level_name || "").trim() !== "");
-  if(filled.length === 0){
-    return `<div class="pdf-level-empty">No level checks recorded.</div>`;
-  }
-  return filled.map(lvl =>
-    `<div class="pdf-level-row"><span>${escapeHtml(lvl.level_name)}</span><span>${pdfTextOrDash(lvl.time)}</span></div>`
-  ).join("");
 }
 
 async function populatePdfTemplate(report){
@@ -663,11 +754,6 @@ async function populatePdfTemplate(report){
   stopesContainer.innerHTML = (report.stopes || [])
     .map((stope, idx) => buildPdfStopeCardHTML(stope, idx + 1))
     .join("");
-
-  const levelsContainer = document.getElementById("pdfLevelsContainer");
-  if(levelsContainer){
-    levelsContainer.innerHTML = buildPdfLevelListHTML(report.levels);
-  }
 
   // Photos are embedded as <img src="data:..."> — make sure they've
   // actually decoded before html2canvas captures the page, or the
@@ -784,7 +870,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("addStopeBtn").addEventListener("click", () => addStope());
 
   initStopesContainerEvents();
-  initLevelChecksEvents();
   // No stope card is seeded — the form opens with zero stopes.
-  // The Level Checks card is static (6 fixed rows, already in the HTML).
+  // Each stope card (once added) starts with its own default
+  // Time of Flush row and Level Check row.
 });

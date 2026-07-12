@@ -46,41 +46,6 @@
       </div>
       <button type="button" id="addStopeBtn" class="btn add-stope-btn">+ Add Stope</button>
     </section>
-    <section class="card">
-      <h2>Level Checks</h2>
-      <div class="level-check-table" id="levelsContainer">
-        <div class="level-check-row" data-level-row="1">
-          <label class="level-check-level">Level 1 <input id="level_1_name" data-level-name data-level-index="1" type="text" placeholder="e.g. 1450 Level"></label>
-          <label class="level-check-time">Time <input id="level_1_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_1_timestamp_full" data-level-full value="">
-        </div>
-        <div class="level-check-row" data-level-row="2">
-          <label class="level-check-level">Level 2 <input id="level_2_name" data-level-name data-level-index="2" type="text" placeholder="e.g. 1380 Level"></label>
-          <label class="level-check-time">Time <input id="level_2_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_2_timestamp_full" data-level-full value="">
-        </div>
-        <div class="level-check-row" data-level-row="3">
-          <label class="level-check-level">Level 3 <input id="level_3_name" data-level-name data-level-index="3" type="text" placeholder="e.g. 1260 Level"></label>
-          <label class="level-check-time">Time <input id="level_3_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_3_timestamp_full" data-level-full value="">
-        </div>
-        <div class="level-check-row" data-level-row="4">
-          <label class="level-check-level">Level 4 <input id="level_4_name" data-level-name data-level-index="4" type="text" placeholder="Level name"></label>
-          <label class="level-check-time">Time <input id="level_4_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_4_timestamp_full" data-level-full value="">
-        </div>
-        <div class="level-check-row" data-level-row="5">
-          <label class="level-check-level">Level 5 <input id="level_5_name" data-level-name data-level-index="5" type="text" placeholder="Level name"></label>
-          <label class="level-check-time">Time <input id="level_5_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_5_timestamp_full" data-level-full value="">
-        </div>
-        <div class="level-check-row" data-level-row="6">
-          <label class="level-check-level">Level 6 <input id="level_6_name" data-level-name data-level-index="6" type="text" placeholder="Level name"></label>
-          <label class="level-check-time">Time <input id="level_6_time" data-level-time type="text" readonly placeholder="--:--"></label>
-          <input type="hidden" id="level_6_timestamp_full" data-level-full value="">
-        </div>
-      </div>
-    </section>
     <section class="submit-card">
       <button id="submitBtn" class="btn primary">Submit Shift Sheet</button>
       <div id="status" class="status"></div>
@@ -126,16 +91,8 @@
         <h2 class="pdf-section-title">Stopes</h2>
         <div id="pdfStopesContainer">
           <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture,
-               one card per current stope in the form, in order. -->
-        </div>
-      </div>
-
-      <div class="pdf-section">
-        <h2 class="pdf-section-title">Level Checks</h2>
-        <div id="pdfLevelsContainer" class="pdf-level-list">
-          <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture.
-               Only levels with a name entered are shown; empty rows are
-               omitted. -->
+               one card per current stope in the form, in order. Each stope's
+               own Level Checks table is included inside its card. -->
         </div>
       </div>
 

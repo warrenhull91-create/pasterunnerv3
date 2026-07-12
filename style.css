@@ -524,62 +524,152 @@ textarea{
   min-height: 110px;
 }
 
-/* ---------------- LEVEL CHECKS ---------------- */
-.level-check-table{
+/* ---------------- LEVEL CHECKS (per stope) ---------------- */
+.level-entries-list{
   display:flex;
   flex-direction:column;
   gap: 12px;
 }
 
-.level-check-row{
-  display:flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
-  padding: 14px;
-  background: var(--charcoal-700);
+.level-entry{
+  background: var(--charcoal-800);
   border: 1.5px solid var(--charcoal-600);
   border-radius: var(--radius-sm);
-}
-
-.level-check-level{
-  flex: 2 1 220px;
-}
-
-.level-check-time{
-  flex: 1 1 120px;
-}
-
-.level-check-time input{
-  background: var(--charcoal-800);
-  color: var(--safety-yellow);
-  font-weight: 800;
-  font-size: 1.1rem;
-  text-align: center;
-  letter-spacing: 0.05em;
-  cursor: default;
-}
-
-/* ---------------- PDF LEVEL CHECK LIST ---------------- */
-.pdf-level-list{
-  padding: 6px 32px 20px;
-}
-.pdf-level-row{
+  padding: 14px;
   display:flex;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border: 1px solid #dcdfe2;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #1b1e22;
+  flex-direction:column;
+  gap: 12px;
 }
-.pdf-level-row span:last-child{
-  font-weight: 700;
-  color: #121519;
+
+.level-entry-row{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.level-entry-name{
+  flex: 1 1 180px;
+}
+.level-entry-name input{
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.remove-level-entry-btn{
+  flex: 0 0 auto;
+  background: transparent;
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  font-weight: 800;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.remove-level-entry-btn:active{
+  background: rgba(255,85,85,0.12);
+}
+
+/* Compact by default, wraps to a second line on small screens per spec,
+   while the level name (above) always stays clearly visible. */
+.level-checks-row{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.level-check-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 6px;
+  min-width: 68px;
+  padding: 10px 8px;
+  background: var(--charcoal-700);
+  border: 2px solid var(--charcoal-600);
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color .15s ease, background .15s ease;
+}
+.level-check-box.checked-visual{
+  border-color: #2ecc71;
+  background: rgba(46,204,113,0.1);
+}
+
+.level-check-box input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 2px solid var(--grey-500);
+  background: var(--charcoal-800);
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+  flex-shrink: 0;
+}
+.level-check-box input[type="checkbox"]:checked{
+  background: #123524;
+  border-color: #2ecc71;
+}
+.level-check-box input[type="checkbox"]:checked::after{
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: #3ecf8e;
+  font-weight: 900;
+  font-size: 1.15rem;
+}
+
+.check-num{
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--grey-400);
+}
+
+.check-time{
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--safety-yellow);
+  letter-spacing: 0.02em;
+  min-height: 1em;
+}
+
+.add-level-entry-btn{
+  align-self: flex-start;
+  min-height: 48px;
+  padding: 12px 20px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+}
+.add-level-entry-btn:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: solid;
+}
+
+/* ---------------- PDF LEVEL CHECKS TABLE ---------------- */
+.pdf-level-checks-table td:not(.label){
+  text-align: center;
+  font-size: 11px;
+  white-space: nowrap;
 }
 .pdf-level-empty{
-  padding: 10px 14px;
+  padding: 6px 16px 14px;
   font-size: 12px;
   color: #8b939b;
   font-style: italic;
