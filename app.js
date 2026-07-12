@@ -75,12 +75,15 @@ function stopeCardTemplate(sid){
           </label>
 
           <div class="status-group-label">Stope Type</div>
-          <div class="status-btn-group two-col" role="group">
+          <div class="status-btn-group three-col" role="group">
             <button type="button" class="status-btn" data-value="Plug">
               <span class="status-dot dot-curing"></span>PLUG
             </button>
             <button type="button" class="status-btn" data-value="Body">
               <span class="status-dot dot-pouring"></span>BODY
+            </button>
+            <button type="button" class="status-btn" data-value="Other">
+              <span class="status-dot dot-other"></span>OTHER
             </button>
           </div>
           <input type="hidden" id="stope_${sid}_status" data-field="status" value="">
@@ -379,249 +382,55 @@ function initStopesContainerEvents(){
 }
 
 /* ============================================================
-   LEVEL CHECKS — Level Cards + Inspection Entries
-   Starts with 6 Level Cards, each holding 5 inspection entries.
-   Both are extensible: "+ Add Another Level" appends cards,
-   "+ Add Inspection" (inside each card) appends entries. Cards
-   and non-default entries are removable; default entries can
-   only be cleared, never removed, since every card always keeps
-   its 5 starting slots.
+   LEVEL CHECKS (fixed 6 rows)
+   Restored to the original design: one dedicated card, six
+   static rows, each with a Level field and an automatic
+   read-only timestamp. No add/remove — exactly six rows already
+   in the HTML (level_1_name .. level_6_name / level_1_time ..
+   level_6_time). Timestamp is captured automatically on blur,
+   never typed by the operator.
    ============================================================ */
 
-let levelUidCounter = 0;
-let entryUidCounter = 0;
+function formatTime24h(date){
+  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+}
 
-function formatTimestampNow(){
+function handleLevelNameBlur(nameInput){
+  const row = nameInput.closest(".level-check-row");
+  if(!row) return;
+  const timeDisplay = row.querySelector("[data-level-time]");
+  const fullHidden = row.querySelector("[data-level-full]");
+  const hasText = nameInput.value.trim() !== "";
+
+  if(!hasText){
+    // Row cleared — clear its timestamp too, so a later entry starts fresh.
+    if(timeDisplay) timeDisplay.value = "";
+    if(fullHidden) fullHidden.value = "";
+    return;
+  }
+
+  // Only stamp the moment a timestamp doesn't already exist for this row —
+  // minor edits to already-timestamped text must not move the time.
+  if(fullHidden && fullHidden.value){
+    return;
+  }
+
   const now = new Date();
-  const datePart = now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" });
-  const timePart = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-  return `${datePart}, ${timePart}`;
-}
-
-function inspectionEntryTemplate(lid, eid, isDefault){
-  return `
-        <div class="inspection-entry" data-eid="${eid}" data-default="${isDefault ? "true" : "false"}">
-          <div class="inspection-entry-header">
-            <span class="inspection-entry-title">Inspection Entry</span>
-            <div class="inspection-entry-actions">
-              <button type="button" class="clear-entry-btn" data-clear-entry>Clear</button>
-              ${isDefault ? "" : `<button type="button" class="remove-entry-btn" data-remove-entry>Remove</button>`}
-            </div>
-          </div>
-
-          <label>Level Reading <input type="text" id="level_${lid}_entry_${eid}_reading" data-field="reading" placeholder="e.g. 14.2m"></label>
-
-          <div class="inspection-status-group" role="group">
-            <button type="button" class="inspection-status-btn inspection-inspected" data-value="Inspected">✅ INSPECTED</button>
-            <button type="button" class="inspection-status-btn inspection-cant" data-value="Cant Access">🚫 CAN'T ACCESS</button>
-          </div>
-          <input type="hidden" id="level_${lid}_entry_${eid}_status" data-field="status" value="">
-
-          <div class="inspection-comments-wrap" data-comments-wrap>
-            <label>Comments
-              <textarea id="level_${lid}_entry_${eid}_comments" data-field="comments" placeholder="Explain why this reading couldn't be accessed..."></textarea>
-            </label>
-          </div>
-
-          <label class="inspection-timestamp-field">Recorded
-            <input type="text" id="level_${lid}_entry_${eid}_timestamp" data-field="timestamp" readonly placeholder="Not yet recorded">
-          </label>
-        </div>`;
-}
-
-function buildDefaultEntriesHTML(lid, count){
-  let html = "";
-  for(let i = 0; i < count; i++){
-    entryUidCounter += 1;
-    html += inspectionEntryTemplate(lid, entryUidCounter, true);
-  }
-  return html;
-}
-
-function levelCardTemplate(lid){
-  return `
-        <div class="level-card" data-lid="${lid}">
-          <div class="level-card-header">
-            <button type="button" class="collapse-toggle-btn" data-collapse-toggle aria-label="Collapse card">▾</button>
-            <input type="text" class="level-name-input" id="level_${lid}_name" data-field="level_name" placeholder="e.g. 1450 Level">
-            <span class="level-progress" data-level-progress>0 / 5 Completed</span>
-            <button type="button" class="remove-stope-btn remove-level-btn">Remove Level</button>
-          </div>
-          <div class="level-card-body" data-card-body>
-            <div class="inspection-list" data-inspection-list>
-${buildDefaultEntriesHTML(lid, 5)}
-            </div>
-            <button type="button" class="btn ghost add-inspection-btn" data-add-inspection>+ Add Inspection</button>
-          </div>
-        </div>`;
-}
-
-function addLevelCard(scrollTo = true){
-  levelUidCounter += 1;
-  const lid = levelUidCounter;
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = levelCardTemplate(lid).trim();
-  const card = wrapper.firstElementChild;
-  document.getElementById("levelsContainer").appendChild(card);
-  updateCardProgress(card);
-  if(scrollTo){
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-}
-
-function removeLevelCard(card){
-  card.remove();
-}
-
-function addInspectionEntry(card){
-  const lid = card.dataset.lid;
-  entryUidCounter += 1;
-  const eid = entryUidCounter;
-  const list = card.querySelector("[data-inspection-list]");
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = inspectionEntryTemplate(lid, eid, false).trim();
-  list.appendChild(wrapper.firstElementChild);
-  updateCardProgress(card);
-}
-
-function removeInspectionEntry(card, entry){
-  entry.remove();
-  updateCardProgress(card);
-}
-
-function clearInspectionEntry(entry){
-  entry.querySelectorAll("[data-field]").forEach(el => { el.value = ""; });
-  entry.querySelectorAll(".inspection-status-btn").forEach(b => b.classList.remove("active"));
-  const commentsWrap = entry.querySelector("[data-comments-wrap]");
-  if(commentsWrap) commentsWrap.classList.remove("show");
-  const card = entry.closest(".level-card");
-  if(card) updateCardProgress(card);
-}
-
-function refreshEntryTimestamp(entry){
-  const reading = (entry.querySelector('[data-field="reading"]')?.value || "").trim();
-  const status = (entry.querySelector('[data-field="status"]')?.value || "").trim();
-  const comments = (entry.querySelector('[data-field="comments"]')?.value || "").trim();
-  const tsField = entry.querySelector('[data-field="timestamp"]');
-  if(!tsField) return;
-
-  const isEmpty = !reading && !status && !comments;
-  // Every qualifying edit re-stamps to now — including edits to an entry
-  // that was already timestamped — so the record always reflects the
-  // most recent change, per spec.
-  tsField.value = isEmpty ? "" : formatTimestampNow();
-}
-
-function isEntryComplete(entry){
-  const status = entry.querySelector('[data-field="status"]')?.value || "";
-  const comments = (entry.querySelector('[data-field="comments"]')?.value || "").trim();
-  return status === "Inspected" || (status === "Cant Access" && comments !== "");
-}
-
-function updateCardProgress(card){
-  const entries = card.querySelectorAll(".inspection-entry");
-  const progressEl = card.querySelector("[data-level-progress]");
-  let completed = 0;
-  let defaultTotal = 0;
-  let defaultCompleted = 0;
-
-  entries.forEach(entry => {
-    const complete = isEntryComplete(entry);
-    if(complete) completed += 1;
-    if(entry.dataset.default === "true"){
-      defaultTotal += 1;
-      if(complete) defaultCompleted += 1;
-    }
-  });
-
-  if(progressEl) progressEl.textContent = `${completed} / ${entries.length} Completed`;
-  card.classList.toggle("level-card-complete", defaultTotal > 0 && defaultCompleted === defaultTotal);
-}
-
-function toggleCollapseCard(card){
-  const collapsed = card.classList.toggle("collapsed");
-  const btn = card.querySelector("[data-collapse-toggle]");
-  if(btn) btn.textContent = collapsed ? "▸" : "▾";
-}
-
-function handleInspectionStatusClick(btn){
-  const entry = btn.closest(".inspection-entry");
-  const value = btn.dataset.value; // "Inspected" | "Cant Access"
-  const hidden = entry.querySelector('[data-field="status"]');
-  if(hidden) hidden.value = value;
-
-  entry.querySelectorAll(".inspection-status-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.value === value);
-  });
-
-  const commentsWrap = entry.querySelector("[data-comments-wrap]");
-  if(commentsWrap) commentsWrap.classList.toggle("show", value === "Cant Access");
-
-  refreshEntryTimestamp(entry);
-  const card = entry.closest(".level-card");
-  if(card) updateCardProgress(card);
+  if(timeDisplay) timeDisplay.value = formatTime24h(now);
+  if(fullHidden) fullHidden.value = now.toISOString();
 }
 
 function initLevelChecksEvents(){
   const container = document.getElementById("levelsContainer");
   if(!container) return;
 
-  container.addEventListener("click", (e) => {
-    const collapseBtn = e.target.closest("[data-collapse-toggle]");
-    if(collapseBtn){
-      toggleCollapseCard(collapseBtn.closest(".level-card"));
-      return;
-    }
-
-    const statusBtn = e.target.closest(".inspection-status-btn");
-    if(statusBtn){ handleInspectionStatusClick(statusBtn); return; }
-
-    const clearBtn = e.target.closest("[data-clear-entry]");
-    if(clearBtn){
-      const entry = clearBtn.closest(".inspection-entry");
-      if(confirm("Clear this inspection entry?")){
-        clearInspectionEntry(entry);
-      }
-      return;
-    }
-
-    const removeEntryBtn = e.target.closest("[data-remove-entry]");
-    if(removeEntryBtn){
-      const entry = removeEntryBtn.closest(".inspection-entry");
-      const card = removeEntryBtn.closest(".level-card");
-      if(confirm("Remove this inspection entry?")){
-        removeInspectionEntry(card, entry);
-      }
-      return;
-    }
-
-    const addInspectionBtn = e.target.closest("[data-add-inspection]");
-    if(addInspectionBtn){
-      addInspectionEntry(addInspectionBtn.closest(".level-card"));
-      return;
-    }
-
-    const removeLevelBtn = e.target.closest(".remove-level-btn");
-    if(removeLevelBtn){
-      const card = removeLevelBtn.closest(".level-card");
-      if(confirm("Remove this Level Card and all its inspection entries?")){
-        removeLevelCard(card);
-      }
-      return;
-    }
-  });
-
-  // blur doesn't bubble, so this listener runs in the capture phase —
-  // it still fires for every matching descendant as focus moves through it.
   container.addEventListener("blur", (e) => {
-    if(e.target.matches('.inspection-entry [data-field="reading"], .inspection-entry [data-field="comments"]')){
-      const entry = e.target.closest(".inspection-entry");
-      refreshEntryTimestamp(entry);
-      const card = entry.closest(".level-card");
-      if(card) updateCardProgress(card);
+    if(e.target.matches("[data-level-name]")){
+      handleLevelNameBlur(e.target);
     }
-  }, true);
+  }, true); // capture phase — blur doesn't bubble
 }
+
 
 /* ============================================================
    REPORT COLLECTION
@@ -667,32 +476,12 @@ function collectReport(isTest=false){
     return stope;
   });
 
-  const levels = Array.from(document.querySelectorAll("#levelsContainer .level-card")).map((card, idx) => {
-    const getCardVal = (field) => {
-      const el = card.querySelector(`[data-field="${field}"]`);
-      return (el && el.value ? el.value : "").trim();
-    };
-
-    const entries = Array.from(card.querySelectorAll(".inspection-entry")).map((entry, eIdx) => {
-      const getVal = (field) => {
-        const el = entry.querySelector(`[data-field="${field}"]`);
-        return (el && el.value ? el.value : "").trim();
-      };
-      return {
-        entry_number: eIdx + 1,
-        reading: getVal("reading"),
-        status: getVal("status"), // "Inspected" | "Cant Access" | ""
-        comments: getVal("comments"),
-        timestamp: getVal("timestamp")
-      };
-    });
-
-    return {
-      level_number: idx + 1,
-      level_name: getCardVal("level_name"),
-      entries
-    };
-  });
+  const levels = [1, 2, 3, 4, 5, 6].map(n => ({
+    level_number: n,
+    level_name: val(`level_${n}_name`),
+    time: val(`level_${n}_time`),
+    timestamp_full: val(`level_${n}_timestamp_full`)
+  }));
 
   return {
     isTest,
@@ -725,6 +514,7 @@ const PDF_STATUS_META = {
   "Body": "pill-ok",
   "Requires Attention": "pill-warn",
   "Plug": "pill-curing",
+  "Other": "pill-na",
   "N/A": "pill-na",
   "AM": "pill-info",
   "PM": "pill-info",
@@ -850,67 +640,14 @@ function waitForImages(container){
   }));
 }
 
-const INSPECTION_STATUS_META = {
-  "Inspected": "pill-ok",
-  "Cant Access": "pill-warn"
-};
-
-function buildPdfLevelCardHTML(level, n){
-  const filledEntries = (level.entries || []).filter(e =>
-    (e.reading || "").trim() || (e.status || "").trim() || (e.comments || "").trim()
-  );
-
-  const heading = level.level_name ? escapeHtml(level.level_name) : `Level Card ${n}`;
-
-  if(filledEntries.length === 0){
-    return `
-        <div class="pdf-stope-card">
-          <div class="pdf-stope-head">
-            <h3>${heading}</h3>
-            <span class="pdf-stope-id">Level Card ${n}</span>
-          </div>
-          <div class="pdf-comments-inline">
-            <span>No inspection entries recorded.</span>
-          </div>
-        </div>`;
-  }
-
-  const rows = filledEntries.map(entry => {
-    const status = entry.status || "";
-    const statusLabel = status === "Cant Access" ? "Can't Access" : (status || "Not Set");
-    return `
-            <tr>
-              <td class="label">Entry ${entry.entry_number}</td>
-              <td>${pdfTextOrDash(entry.reading)}</td>
-              <td><span class="pdf-pill ${status ? (INSPECTION_STATUS_META[status] || "pill-na") : "pill-na"}">${escapeHtml(statusLabel)}</span></td>
-              <td>${pdfTextOrDash(entry.comments)}</td>
-              <td>${pdfTextOrDash(entry.timestamp)}</td>
-            </tr>`;
-  }).join("");
-
-  return `
-        <div class="pdf-stope-card">
-          <div class="pdf-stope-head">
-            <h3>${heading}</h3>
-            <span class="pdf-stope-id">Level Card ${n}</span>
-          </div>
-          <table class="pdf-table pdf-checklist-table">
-            <tr>
-              <td class="label">Entry</td><td class="label">Reading</td><td class="label">Status</td>
-              <td class="label">Comments</td><td class="label">Recorded</td>
-            </tr>${rows}
-          </table>
-        </div>`;
-}
-
-function buildPdfLevelsHTML(levels){
-  const relevant = (levels || []).filter(lvl =>
-    (lvl.level_name || "").trim() || (lvl.entries || []).some(e => (e.reading || e.status || e.comments))
-  );
-  if(relevant.length === 0){
+function buildPdfLevelListHTML(levels){
+  const filled = (levels || []).filter(lvl => (lvl.level_name || "").trim() !== "");
+  if(filled.length === 0){
     return `<div class="pdf-level-empty">No level checks recorded.</div>`;
   }
-  return relevant.map((lvl, idx) => buildPdfLevelCardHTML(lvl, idx + 1)).join("");
+  return filled.map(lvl =>
+    `<div class="pdf-level-row"><span>${escapeHtml(lvl.level_name)}</span><span>${pdfTextOrDash(lvl.time)}</span></div>`
+  ).join("");
 }
 
 async function populatePdfTemplate(report){
@@ -929,7 +666,7 @@ async function populatePdfTemplate(report){
 
   const levelsContainer = document.getElementById("pdfLevelsContainer");
   if(levelsContainer){
-    levelsContainer.innerHTML = buildPdfLevelsHTML(report.levels);
+    levelsContainer.innerHTML = buildPdfLevelListHTML(report.levels);
   }
 
   // Photos are embedded as <img src="data:..."> — make sure they've
@@ -1045,12 +782,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("submitBtn").addEventListener("click", () => submitReport(false));
   document.getElementById("testBtn").addEventListener("click", () => submitReport(true));
   document.getElementById("addStopeBtn").addEventListener("click", () => addStope());
-  document.getElementById("addLevelBtn").addEventListener("click", () => addLevelCard());
 
   initStopesContainerEvents();
   initLevelChecksEvents();
-  // No stope card is seeded — the form opens with zero stopes, per spec.
-  for(let i = 0; i < 6; i++){
-    addLevelCard(false); // 6 default Level Cards, no scroll during initial seed
-  }
+  // No stope card is seeded — the form opens with zero stopes.
+  // The Level Checks card is static (6 fixed rows, already in the HTML).
 });
