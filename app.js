@@ -660,48 +660,73 @@ function buildPdfStopeCardHTML(stope, n){
     const photosHTML = photos.length
       ? `<div class="pdf-photo-grid">${photos.map(src => `<img class="pdf-photo-thumb" src="${src}" alt="Issue photo">`).join("")}</div>`
       : "";
+    const issueCell = stope[`${key}_issue`] ? pdfTextOrDash(stope[`${key}_issue`]) : "—";
     return `
             <tr>
               <td class="label">${escapeHtml(label)}</td>
               <td>${pdfPillHTML(stope[key], "Not Checked")}</td>
-              <td>${pdfTextOrDash(stope[`${key}_issue`])}${photosHTML}</td>
+              <td>${issueCell}${photosHTML}</td>
             </tr>`;
   }).join("");
 
-  const flushEntries = (stope.flush_entries && stope.flush_entries.length) ? stope.flush_entries : [{ time: "", comments: "" }];
-  const flushRows = flushEntries.map((entry, i) => `
+  const flushEntries = (stope.flush_entries && stope.flush_entries.length)
+    ? stope.flush_entries.filter(e => (e.time || "").trim() || (e.comments || "").trim())
+    : [];
+  const flushRows = flushEntries.length
+    ? flushEntries.map((entry, i) => `
             <tr>
               <td class="label">Time of Flush ${i + 1}</td><td>${pdfTextOrDash(entry.time)}</td>
-              <td class="label">Comments</td><td>${pdfTextOrDash(entry.comments)}</td>
-            </tr>`).join("");
+              <td class="label">Comments</td><td>${entry.comments ? pdfTextOrDash(entry.comments) : "—"}</td>
+            </tr>`).join("")
+    : `
+            <tr><td colspan="4">No flush entries recorded.</td></tr>`;
 
   const heading = stope.stope_name ? escapeHtml(stope.stope_name.toUpperCase()) : "NEW STOPE";
+  const isOtherType = stope.status === "Other";
+
+  const delaysBlock = (stope.delays || "").trim() ? `
+          <div class="pdf-comments-inline" data-pdf-block>
+            <span class="pdf-comments-label">Delays</span>
+            <span>${pdfTextOrDash(stope.delays)}</span>
+          </div>` : "";
+
+  const notesBlock = (stope.general_notes || "").trim() ? `
+          <div class="pdf-comments-inline" data-pdf-block>
+            <span class="pdf-comments-label">General Notes</span>
+            <span>${pdfTextOrDash(stope.general_notes)}</span>
+          </div>` : "";
+
+  const noCommentsBlock = (delaysBlock || notesBlock) ? "" : `
+          <div class="pdf-comments-inline" data-pdf-block>
+            <span>No additional comments recorded.</span>
+          </div>`;
 
   return `
         <div class="pdf-stope-card">
-          <div class="pdf-stope-head">
+          <div class="pdf-stope-head" data-pdf-block>
             <h3>STOPE — ${heading}</h3>
             <span class="pdf-stope-id">Stope Entry ${n}</span>
           </div>
 
-          <div class="pdf-status-row">
-            <div>
-              <span>Stope Type</span>
-              ${pdfPillHTML(stope.status, "Not Set")}
-            </div>
-            <div class="pdf-status-other">
-              <span>Stope Type Description</span>
-              <span>${pdfTextOrDash(stope.status_other_comments)}</span>
-            </div>
-          </div>
+          <div class="pdf-checklist-title" data-pdf-block>Stope Details</div>
+          <table class="pdf-table pdf-metrics-table" data-pdf-block>
+            <tr>
+              <td class="label">Stope Type</td><td>${pdfPillHTML(stope.status, "Not Set")}</td>
+              <td class="label"></td><td></td>
+            </tr>${isOtherType ? `
+            <tr>
+              <td class="label">Stope Type Description</td><td colspan="3">${pdfTextOrDash(stope.status_other_comments)}</td>
+            </tr>` : ""}
+          </table>
 
-          <table class="pdf-table pdf-metrics-table">
+          <div class="pdf-checklist-title" data-pdf-block>Pour and Plug Details</div>
+          <table class="pdf-table pdf-metrics-table" data-pdf-block>
             <tr>
               <td class="label">Level of Fill Point</td><td>${pdfTextOrDash(stope.fill_point)}</td>
-              <td class="label">Total m³</td><td>${pdfTextOrDash(stope.total_m3)}</td>
+              <td class="label">Plug m³</td><td>${pdfTextOrDash(stope.plug_m3)}</td>
             </tr>
             <tr>
-              <td class="label">Plug m³</td><td>${pdfTextOrDash(stope.plug_m3)}</td>
+              <td class="label">Total m³</td><td>${pdfTextOrDash(stope.total_m3)}</td>
               <td class="label">Poured m³</td><td>${pdfTextOrDash(stope.poured_m3)}</td>
             </tr>
             <tr>
@@ -710,8 +735,8 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>
           </table>
 
-          <div class="pdf-checklist-title">Times</div>
-          <table class="pdf-table pdf-metrics-table">
+          <div class="pdf-checklist-title" data-pdf-block>Times</div>
+          <table class="pdf-table pdf-metrics-table" data-pdf-block>
             <tr>
               <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
               <td class="label">Hot Seating Start of Shift?</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
@@ -719,27 +744,24 @@ function buildPdfStopeCardHTML(stope, n){
             <tr>
               <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
               <td class="label">Hot Seating over Shift Change?</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
-            </tr>${flushRows}
+            </tr>
           </table>
 
-          <div class="pdf-checklist-title">Level Checks</div>
-          ${buildPdfLevelChecksTableHTML(stope.level_checks)}
+          <div class="pdf-checklist-title" data-pdf-block>Time of Flush</div>
+          <table class="pdf-table pdf-metrics-table" data-pdf-block>${flushRows}
+          </table>
 
-          <div class="pdf-checklist-title">Stope Checklist</div>
-          <table class="pdf-table pdf-checklist-table">
+          <div class="pdf-checklist-title" data-pdf-block>Stope Checklist</div>
+          <table class="pdf-table pdf-checklist-table" data-pdf-block>
             <tr>
               <td class="label">Item</td><td class="label">Status</td><td class="label">Issue Details / Photos</td>
             </tr>${checklistRows}
           </table>
 
-          <div class="pdf-comments-inline">
-            <span class="pdf-comments-label">Delays</span>
-            <span>${pdfTextOrDash(stope.delays)}</span>
-          </div>
-          <div class="pdf-comments-inline">
-            <span class="pdf-comments-label">General Notes</span>
-            <span>${pdfTextOrDash(stope.general_notes)}</span>
-          </div>
+          <div class="pdf-checklist-title" data-pdf-block>Level Checks</div>
+          ${buildPdfLevelChecksTableHTML(stope.level_checks)}
+
+          <div class="pdf-checklist-title" data-pdf-block>Comments</div>${delaysBlock}${notesBlock}${noCommentsBlock}
         </div>`;
 }
 
@@ -748,7 +770,7 @@ function buildPdfLevelChecksTableHTML(levelChecks){
     (lvl.level_name || "").trim() || (lvl.checks || []).some(c => c.checked)
   );
   if(relevant.length === 0){
-    return `<div class="pdf-level-empty">No level checks recorded for this stope.</div>`;
+    return `<div class="pdf-level-empty" data-pdf-block>No level checks recorded for this stope.</div>`;
   }
 
   const rows = relevant.map(lvl => {
@@ -759,7 +781,7 @@ function buildPdfLevelChecksTableHTML(levelChecks){
   }).join("");
 
   return `
-          <table class="pdf-table pdf-level-checks-table">
+          <table class="pdf-table pdf-level-checks-table" data-pdf-block>
             <tr>
               <td class="label">Level</td><td class="label">Check 1</td><td class="label">Check 2</td>
               <td class="label">Check 3</td><td class="label">Check 4</td><td class="label">Check 5</td>
@@ -784,6 +806,8 @@ async function populatePdfTemplate(report){
   pdfSetText("pdf_shift_date", report.shift_date);
   pdfSetText("pdf_shift_type", report.shift_type);
   pdfSetText("pdf_operator", report.operator);
+  pdfSetText("pdf_operator_table", report.operator);
+  pdfSetText("pdf_operator_submission", report.operator);
   pdfSetText("pdf_shift_boss", report.shift_boss);
   pdfSetText("pdf_plant_operator", report.plant_operator);
   pdfSetText("pdf_paste_runner", report.paste_runner);
@@ -798,10 +822,30 @@ async function populatePdfTemplate(report){
   // actually decoded before html2canvas captures the page, or the
   // PDF can come out with blank image boxes.
   await waitForImages(stopesContainer);
+
+  const template = document.getElementById("pdfTemplate");
+  const levelCount = (report.stopes || []).reduce((sum, s) => sum + (s.level_checks || []).length, 0);
+  console.log("[PDF] Hidden template populated:", {
+    stopes: (report.stopes || []).length,
+    levelCards: levelCount,
+    templateScrollWidth: template ? template.scrollWidth : null,
+    templateScrollHeight: template ? template.scrollHeight : null
+  });
 }
 
 /* ============================================================
    PDF GENERATION (html2canvas + jsPDF)
+
+   The template is captured as one tall canvas, then sliced into
+   A4 pages. Naively slicing at fixed pixel intervals can cut a
+   table or card in half, so instead every element marked
+   data-pdf-block is measured BEFORE capture, and page breaks are
+   only ever placed at one of those boundaries (never inside a
+   block). Page numbers are the one thing drawn directly with
+   jsPDF's text() rather than as HTML — the total page count can
+   only be known after pagination is computed, so a pure-HTML
+   footer can't say "of N" in advance. Everything else in the PDF
+   body is still rendered HTML captured via html2canvas.
    ============================================================ */
 
 async function buildPdfBlob(){
@@ -809,6 +853,19 @@ async function buildPdfBlob(){
   if(!template){
     throw new Error("PDF template not found in page.");
   }
+
+  console.log("[PDF] Template dimensions before capture:", {
+    scrollWidth: template.scrollWidth,
+    scrollHeight: template.scrollHeight
+  });
+
+  if(template.scrollWidth === 0 || template.scrollHeight === 0){
+    throw new Error("PDF template has zero size — it is not rendering correctly.");
+  }
+
+  const blockBoundaries = Array.from(template.querySelectorAll("[data-pdf-block]"))
+    .map(el => el.offsetTop)
+    .sort((a, b) => a - b);
 
   const canvas = await html2canvas(template, {
     scale: 2,
@@ -822,6 +879,8 @@ async function buildPdfBlob(){
     throw new Error("PDF capture produced an empty canvas.");
   }
 
+  console.log("[PDF] Captured canvas:", canvas.width + "x" + canvas.height + "px");
+
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
 
@@ -831,20 +890,54 @@ async function buildPdfBlob(){
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
   const imgData = canvas.toDataURL("image/png");
 
-  let heightLeft = imgHeight;
-  let position = 0;
+  const canvasPxPerCssPx = canvas.width / template.scrollWidth;
+  const pageHeightInCanvasPx = pageHeight * (canvas.width / imgWidth);
+  const boundariesInCanvasPx = blockBoundaries
+    .map(y => y * canvasPxPerCssPx)
+    .filter(y => y > 0 && y < canvas.height);
 
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
-
-  while(heightLeft > 0){
-    position -= pageHeight;
-    pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+  function nextSafeBreak(currentY){
+    const naiveBreak = currentY + pageHeightInCanvasPx;
+    if(naiveBreak >= canvas.height) return canvas.height;
+    let best = null;
+    for(const boundary of boundariesInCanvasPx){
+      if(boundary > currentY && boundary <= naiveBreak){
+        best = boundary;
+      } else if(boundary > naiveBreak){
+        break;
+      }
+    }
+    // No safe boundary fits on this page (a single block taller than one
+    // page) — fall back to the naive cut rather than looping forever.
+    return best || naiveBreak;
   }
 
-  return pdf.output("blob");
+  const pageBreaksCanvasPx = [];
+  let cursor = 0;
+  while(cursor < canvas.height){
+    const next = nextSafeBreak(cursor);
+    pageBreaksCanvasPx.push(next);
+    cursor = next;
+  }
+
+  const totalPages = pageBreaksCanvasPx.length;
+
+  let pageStart = 0;
+  pageBreaksCanvasPx.forEach((pageEnd, idx) => {
+    if(idx > 0) pdf.addPage();
+    const offsetPt = -(pageStart * (imgWidth / canvas.width));
+    pdf.addImage(imgData, "PNG", 0, offsetPt, imgWidth, imgHeight);
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(`Page ${idx + 1} of ${totalPages}`, pageWidth - 40, pageHeight - 16, { align: "right" });
+
+    pageStart = pageEnd;
+  });
+
+  console.log("[PDF] Paginated into", totalPages, "page(s)");
+
+  return { blob: pdf.output("blob"), pageCount: totalPages };
 }
 
 function blobToBase64(blob){
@@ -858,24 +951,37 @@ function blobToBase64(blob){
 
 /* ============================================================
    SUBMIT FLOW
-   Same fetch target and payload shape as before — only the PDF
-   template population step now awaits image loading.
+   Same fetch target and payload shape as before. Debug logging
+   added at every stage so a failure is traceable: form data
+   collected, PDF template populated, PDF generated (size + page
+   count), and whether the attachment reached the submit call.
    ============================================================ */
 
 async function submitReport(isTest=false){
   try{
     setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
     const report = collectReport(isTest);
+    console.log("[PDF] Form data collected:", {
+      shift_date: report.shift_date,
+      operator: report.operator,
+      stopeCount: (report.stopes || []).length
+    });
+    if(!report || !report.shift_date){
+      throw new Error("Form data could not be collected — the report object is missing required fields.");
+    }
 
     await populatePdfTemplate(report);
     // let the browser paint the populated template before capture
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     setStatus("busy", "Generating PDF...");
-    const pdfBlob = await buildPdfBlob();
+    const pdfResult = await buildPdfBlob();
+    const pdfBlob = pdfResult && pdfResult.blob;
     if(!pdfBlob || pdfBlob.size === 0){
-      throw new Error("Generated PDF was empty.");
+      throw new Error("Generated PDF was empty — refusing to submit a blank PDF.");
     }
+    console.log("[PDF] Generated file size:", pdfBlob.size, "bytes across", pdfResult.pageCount, "page(s)");
+
     const pdfBase64 = await blobToBase64(pdfBlob);
 
     setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
@@ -891,14 +997,15 @@ async function submitReport(isTest=false){
     try { data = JSON.parse(text); } catch(e) { data = { success:false, error:text }; }
 
     if(!data.success){
+      console.error("[PDF] Submission function reported failure:", data.error);
       throw new Error(data.error || "Submission failed");
     }
 
+    console.log("[PDF] Attachment successfully passed to submission function. Drive PDF:", data.url);
     setStatus("good", "Submitted successfully. PDF created in Google Drive and email sent.");
-    console.log("Drive PDF:", data.url);
   } catch(err){
     setStatus("bad", "Failed: " + err.message);
-    console.error(err);
+    console.error("[PDF] Submission failed:", err);
   }
 }
 
