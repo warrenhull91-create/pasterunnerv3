@@ -884,9 +884,16 @@ async function buildPdfBlob(){
     throw new Error("PDF template has zero size — it is not rendering correctly.");
   }
 
+  // Measure every safe page-break point relative to the PDF template itself.
+  // offsetTop is unreliable for nested elements because it is relative to each
+  // element's offset parent, which caused issue-photo cards to be split and
+  // partially repeated across pages.
+  const templateRect = template.getBoundingClientRect();
   const blockBoundaries = Array.from(template.querySelectorAll("[data-pdf-block]"))
-    .map(el => el.offsetTop)
-    .sort((a, b) => a - b);
+    .map(el => el.getBoundingClientRect().top - templateRect.top)
+    .filter(y => Number.isFinite(y) && y > 0)
+    .sort((a, b) => a - b)
+    .filter((y, idx, arr) => idx === 0 || Math.abs(y - arr[idx - 1]) > 1);
 
   const canvas = await html2canvas(template, {
     scale: 2,
