@@ -805,7 +805,7 @@ function waitForImages(container){
 async function populatePdfTemplate(report){
   pdfSetText("pdf_shift_date", report.shift_date);
   pdfSetText("pdf_shift_type", report.shift_type);
-  pdfSetText("pdf_operator", report.operator);
+  pdfSetText("pdf_paste_runner_top", report.paste_runner);
   pdfSetText("pdf_operator_table", report.operator);
   pdfSetText("pdf_operator_submission", report.operator);
   pdfSetText("pdf_shift_boss", report.shift_boss);
