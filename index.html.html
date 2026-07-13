@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Paste Runner" />
+  <title>Paste Runner V3</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <img src="DC_LOGO.jpg" alt="Doherty Corp" class="logo" />
+      <div>
+        <h1>Paste Runner Sheet</h1>
+        <p>Doherty Corp · V3</p>
+      </div>
+    </div>
+    <button id="testBtn" class="btn ghost">Send Test</button>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Shift Details</h2>
+      <div class="grid">
+        <label class="required">Date <input id="shift_date" type="date"></label>
+        <label class="required">Shift
+          <select id="shift_type">
+            <option value="D/S">D/S</option>
+            <option value="N/S">N/S</option>
+          </select>
+        </label>
+        <label>Paste Runner <input id="paste_runner" type="text"></label>
+        <label>Plant Operator <input id="plant_operator" type="text"></label>
+        <label class="required">Paste Engineer <input id="operator" type="text" placeholder="Paste Engineer name"></label>
+        <label>Shift Boss <input id="shift_boss" type="text"></label>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Stopes</h2>
+      <div class="stope-grid" id="stopesContainer">
+        <!-- Stope cards are generated dynamically by app.js (createStopeCard).
+             The form starts with NO cards — the user adds each one with
+             "+ Add Stope" below, names it, and can remove any of them. -->
+      </div>
+      <button type="button" id="addStopeBtn" class="btn add-stope-btn">+ Add Stope</button>
+    </section>
+    <section class="submit-card">
+      <button id="submitBtn" class="btn primary">Submit Shift Sheet</button>
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+  <!-- ============================================================
+       HIDDEN PDF TEMPLATE
+       Not display:none (html2canvas cannot render display:none).
+       Pushed off-screen instead, populated by populatePdfTemplate()
+       in app.js just before submit, then captured by html2canvas.
+       ============================================================ -->
+  <div id="pdfTemplateWrapper" aria-hidden="true">
+    <div id="pdfTemplate" class="pdf-page">
+      <div class="pdf-header" data-pdf-block>
+        <img src="DC_LOGO.jpg" alt="Doherty Corp" class="pdf-logo" />
+        <div class="pdf-header-text">
+          <h1>Paste Runner Sheet</h1>
+          <p>Doherty Corp &middot; Underground Paste Fill Report</p>
+        </div>
+      </div>
+
+      <div class="pdf-meta-bar" data-pdf-block>
+        <div><span>Date</span><strong id="pdf_shift_date">—</strong></div>
+        <div><span>Shift</span><strong id="pdf_shift_type">—</strong></div>
+        <div><span>Paste Runner</span><strong id="pdf_paste_runner_top">—</strong></div>
+      </div>
+
+      <div class="pdf-section">
+        <h2 class="pdf-section-title" data-pdf-block>Shift Details</h2>
+        <table class="pdf-table" data-pdf-block>
+          <tr>
+            <td class="label">Paste Runner</td><td id="pdf_paste_runner">—</td>
+            <td class="label">Plant Operator</td><td id="pdf_plant_operator">—</td>
+          </tr>
+          <tr>
+            <td class="label">Paste Engineer</td><td id="pdf_operator_table">—</td>
+            <td class="label">Shift Boss</td><td id="pdf_shift_boss">—</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="pdf-section">
+        <h2 class="pdf-section-title" data-pdf-block>Stopes</h2>
+        <div id="pdfStopesContainer">
+          <!-- Rebuilt fresh by populatePdfTemplate() before every PDF capture,
+               one card per current stope in the form, in order. Each stope's
+               own Level Checks table is included inside its card. Every
+               sub-section inside carries data-pdf-block so the smart
+               pagination in buildPdfBlob() can break between sections
+               without ever cutting through the middle of one. -->
+        </div>
+      </div>
+
+      <div class="pdf-section">
+        <h2 class="pdf-section-title" data-pdf-block>Submission Information</h2>
+        <table class="pdf-table" data-pdf-block>
+          <tr>
+            <td class="label">Submitted On</td><td id="pdf_generated_at">—</td>
+            <td class="label">Paste Engineer</td><td id="pdf_operator_submission">—</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="pdf-footer">
+        Doherty Corp &middot; Paste Runner Sheet
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
