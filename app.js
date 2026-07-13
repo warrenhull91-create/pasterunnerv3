@@ -655,19 +655,35 @@ function pdfSetText(id, value){
 }
 
 function buildPdfStopeCardHTML(stope, n){
-  const checklistRows = CHECKLIST_ITEMS.map(({ key, label }) => {
+  const checklistRows = CHECKLIST_ITEMS.map(({ key, label }) => `
+          <div class="pdf-checklist-row" data-pdf-block>
+            <div class="pdf-checklist-item">${escapeHtml(label)}</div>
+            <div class="pdf-checklist-status">${pdfPillHTML(stope[key], "Not Checked")}</div>
+          </div>`).join("");
+
+  const issueBlocks = CHECKLIST_ITEMS.map(({ key, label }) => {
+    const issue = (stope[`${key}_issue`] || "").trim();
     const photos = stope[`${key}_photos`] || [];
+    if (!issue && photos.length === 0) return "";
+
     const photosHTML = photos.length
-      ? `<div class="pdf-photo-grid">${photos.map(src => `<img class="pdf-photo-thumb" src="${src}" alt="Issue photo">`).join("")}</div>`
+      ? `<div class="pdf-issue-photo-grid">${photos.map(src => `<img class="pdf-issue-photo" src="${src}" alt="Issue photo">`).join("")}</div>`
       : "";
-    const issueCell = stope[`${key}_issue`] ? pdfTextOrDash(stope[`${key}_issue`]) : "—";
+
     return `
-            <tr>
-              <td class="label">${escapeHtml(label)}</td>
-              <td>${pdfPillHTML(stope[key], "Not Checked")}</td>
-              <td>${issueCell}${photosHTML}</td>
-            </tr>`;
+          <div class="pdf-issue-card" data-pdf-block>
+            <div class="pdf-issue-card-head">
+              <span>${escapeHtml(label)}</span>
+              ${pdfPillHTML(stope[key], "Requires Attention")}
+            </div>
+            ${issue ? `<div class="pdf-issue-text">${pdfTextOrDash(issue)}</div>` : ""}
+            ${photosHTML}
+          </div>`;
   }).join("");
+
+  const issuesSection = issueBlocks ? `
+          <div class="pdf-checklist-title" data-pdf-block>Issues Requiring Attention</div>
+          <div class="pdf-issues-wrap">${issueBlocks}</div>` : "";
 
   const flushEntries = (stope.flush_entries && stope.flush_entries.length)
     ? stope.flush_entries.filter(e => (e.time || "").trim() || (e.comments || "").trim())
@@ -721,6 +737,8 @@ function buildPdfStopeCardHTML(stope, n){
           <table class="pdf-table pdf-metrics-table pdf-compact-table" data-pdf-block>${timeRows.join("")}
           </table>` : "";
 
+  const levelChecksSection = buildPdfLevelChecksTableHTML(stope.level_checks);
+
   return `
         <div class="pdf-stope-card">
           <div class="pdf-stope-head" data-pdf-block>
@@ -756,18 +774,14 @@ function buildPdfStopeCardHTML(stope, n){
           </table>
 
           ${timesSection}
-
           ${flushSection}
 
           <div class="pdf-checklist-title" data-pdf-block>Stope Checklist</div>
-          <table class="pdf-table pdf-checklist-table" data-pdf-block>
-            <tr>
-              <td class="label">Item</td><td class="label">Status</td><td class="label">Issue Details / Photos</td>
-            </tr>${checklistRows}
-          </table>
+          <div class="pdf-checklist-compact">${checklistRows}</div>
 
-          <div class="pdf-checklist-title" data-pdf-block>Level Checks</div>
-          ${buildPdfLevelChecksTableHTML(stope.level_checks)}
+          ${issuesSection}
+
+          ${levelChecksSection ? `<div class="pdf-checklist-title" data-pdf-block>Level Checks</div>${levelChecksSection}` : ""}
 
           ${commentsSection}
         </div>`;

@@ -1187,3 +1187,205 @@ textarea{
   text-align: center;
   letter-spacing: 0.5px;
 }
+
+
+/* ============================================================
+   PDF CLEAN-UP — compact checklist, level inspection times,
+   and reduced empty space. These overrides affect only the PDF.
+   ============================================================ */
+.pdf-section{
+  padding: 16px 26px 2px;
+}
+
+.pdf-section-title{
+  margin-bottom: 10px;
+}
+
+.pdf-stope-card{
+  margin-bottom: 14px;
+}
+
+.pdf-checklist-title{
+  margin: 11px 12px 5px;
+  font-size: 9.5px;
+}
+
+.pdf-table{
+  font-size: 10.5px;
+  margin-bottom: 4px;
+}
+
+.pdf-table td{
+  padding: 5px 7px;
+  line-height: 1.25;
+}
+
+.pdf-table td.label{
+  font-size: 8.5px;
+}
+
+.pdf-metrics-table,
+.pdf-checklist-table,
+.pdf-level-checks-table{
+  margin-left: 12px;
+  margin-right: 12px;
+  width: calc(100% - 24px);
+}
+
+.pdf-checklist-table td:first-child{
+  width: 34%;
+}
+
+.pdf-checklist-table td:nth-child(2){
+  width: 22%;
+}
+
+.pdf-pill{
+  padding: 1px 7px;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.pdf-photo-grid{
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.pdf-photo-thumb{
+  width: 82px;
+  height: 62px;
+}
+
+.pdf-level-checks-table td:first-child{
+  width: 24%;
+}
+
+.pdf-level-times-cell{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.pdf-level-time{
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1c8a56;
+}
+
+.pdf-comments-inline{
+  padding: 8px 12px 10px;
+  font-size: 10.5px;
+}
+
+.pdf-footer{
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+
+/* ============================================================
+   PDF CHECKLIST CLEANUP V2
+   Compact two-column checklist. Issue text/photos are separated
+   into larger cards so the normal rows stay tidy across pages.
+   ============================================================ */
+.pdf-checklist-compact{
+  margin: 0 12px 6px;
+  border: 1px solid #dcdfe2;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.pdf-checklist-row{
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  align-items: center;
+  min-height: 31px;
+  border-bottom: 1px solid #e5e7e9;
+  background: #ffffff;
+}
+
+.pdf-checklist-row:last-child{
+  border-bottom: none;
+}
+
+.pdf-checklist-row:nth-child(even){
+  background: #fafafa;
+}
+
+.pdf-checklist-item{
+  padding: 6px 9px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #4a535c;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+.pdf-checklist-status{
+  padding: 5px 9px;
+  border-left: 1px solid #e5e7e9;
+  text-align: center;
+}
+
+.pdf-issues-wrap{
+  margin: 0 12px 6px;
+}
+
+.pdf-issue-card{
+  border: 1px solid #efb1ab;
+  border-left: 4px solid #c23b2f;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 9px;
+  background: #fffafa;
+}
+
+.pdf-issue-card-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: #fdeceb;
+  border-bottom: 1px solid #f2c9c5;
+  font-size: 10px;
+  font-weight: 800;
+  color: #8f2f27;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.pdf-issue-text{
+  padding: 9px 10px 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #333333;
+  white-space: pre-wrap;
+}
+
+.pdf-issue-photo-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 9px 10px 11px;
+}
+
+.pdf-issue-photo{
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid #d4d7da;
+  border-radius: 5px;
+  background: #f3f4f5;
+}
+
+/* Old three-column checklist/photo classes are no longer used. */
+.pdf-checklist-table,
+.pdf-photo-grid,
+.pdf-photo-thumb{
+  display: none !important;
+}
