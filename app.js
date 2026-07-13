@@ -672,14 +672,16 @@ function buildPdfStopeCardHTML(stope, n){
   const flushEntries = (stope.flush_entries && stope.flush_entries.length)
     ? stope.flush_entries.filter(e => (e.time || "").trim() || (e.comments || "").trim())
     : [];
-  const flushRows = flushEntries.length
-    ? flushEntries.map((entry, i) => `
+  const flushRows = flushEntries.map((entry, i) => `
             <tr>
               <td class="label">Time of Flush ${i + 1}</td><td>${pdfTextOrDash(entry.time)}</td>
               <td class="label">Comments</td><td>${entry.comments ? pdfTextOrDash(entry.comments) : "—"}</td>
-            </tr>`).join("")
-    : `
-            <tr><td colspan="4">No flush entries recorded.</td></tr>`;
+            </tr>`).join("");
+
+  const flushSection = flushEntries.length ? `
+          <div class="pdf-checklist-title" data-pdf-block>Time of Flush</div>
+          <table class="pdf-table pdf-metrics-table pdf-compact-table" data-pdf-block>${flushRows}
+          </table>` : "";
 
   const heading = stope.stope_name ? escapeHtml(stope.stope_name.toUpperCase()) : "NEW STOPE";
   const isOtherType = stope.status === "Other";
@@ -696,10 +698,28 @@ function buildPdfStopeCardHTML(stope, n){
             <span>${pdfTextOrDash(stope.general_notes)}</span>
           </div>` : "";
 
-  const noCommentsBlock = (delaysBlock || notesBlock) ? "" : `
-          <div class="pdf-comments-inline" data-pdf-block>
-            <span>No additional comments recorded.</span>
-          </div>`;
+  const commentsSection = (delaysBlock || notesBlock) ? `
+          <div class="pdf-checklist-title" data-pdf-block>Comments</div>${delaysBlock}${notesBlock}` : "";
+
+  const timeRows = [];
+  if ((stope.time_start || "").trim() || (stope.hot_seating_start || "").trim()) {
+    timeRows.push(`
+            <tr>
+              <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
+              <td class="label">Hot Seating Start of Shift?</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
+            </tr>`);
+  }
+  if ((stope.time_pour_finished || "").trim() || (stope.hot_seating_pour_finished || "").trim()) {
+    timeRows.push(`
+            <tr>
+              <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
+              <td class="label">Hot Seating over Shift Change?</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
+            </tr>`);
+  }
+  const timesSection = timeRows.length ? `
+          <div class="pdf-checklist-title" data-pdf-block>Times</div>
+          <table class="pdf-table pdf-metrics-table pdf-compact-table" data-pdf-block>${timeRows.join("")}
+          </table>` : "";
 
   return `
         <div class="pdf-stope-card">
@@ -735,21 +755,9 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>
           </table>
 
-          <div class="pdf-checklist-title" data-pdf-block>Times</div>
-          <table class="pdf-table pdf-metrics-table" data-pdf-block>
-            <tr>
-              <td class="label">Start Time</td><td>${pdfTextOrDash(stope.time_start)}</td>
-              <td class="label">Hot Seating Start of Shift?</td><td>${pdfPillHTML(stope.hot_seating_start, "Not Set")}</td>
-            </tr>
-            <tr>
-              <td class="label">Pour Finished</td><td>${pdfTextOrDash(stope.time_pour_finished)}</td>
-              <td class="label">Hot Seating over Shift Change?</td><td>${pdfPillHTML(stope.hot_seating_pour_finished, "Not Set")}</td>
-            </tr>
-          </table>
+          ${timesSection}
 
-          <div class="pdf-checklist-title" data-pdf-block>Time of Flush</div>
-          <table class="pdf-table pdf-metrics-table" data-pdf-block>${flushRows}
-          </table>
+          ${flushSection}
 
           <div class="pdf-checklist-title" data-pdf-block>Stope Checklist</div>
           <table class="pdf-table pdf-checklist-table" data-pdf-block>
@@ -761,7 +769,7 @@ function buildPdfStopeCardHTML(stope, n){
           <div class="pdf-checklist-title" data-pdf-block>Level Checks</div>
           ${buildPdfLevelChecksTableHTML(stope.level_checks)}
 
-          <div class="pdf-checklist-title" data-pdf-block>Comments</div>${delaysBlock}${notesBlock}${noCommentsBlock}
+          ${commentsSection}
         </div>`;
 }
 
@@ -770,23 +778,22 @@ function buildPdfLevelChecksTableHTML(levelChecks){
     (lvl.level_name || "").trim() || (lvl.checks || []).some(c => c.checked)
   );
   if(relevant.length === 0){
-    return `<div class="pdf-level-empty" data-pdf-block>No level checks recorded for this stope.</div>`;
+    return "";
   }
 
   const rows = relevant.map(lvl => {
-    const cells = (lvl.checks || []).map(c =>
-      `<td>${c.checked ? `✓ ${escapeHtml(c.time || "")}` : "—"}</td>`
-    ).join("");
-    return `<tr><td class="label">${pdfTextOrDash(lvl.level_name)}</td>${cells}</tr>`;
+    const times = (lvl.checks || [])
+      .filter(c => c.checked)
+      .map(c => escapeHtml(c.time || "Time not recorded"));
+    const timesHTML = times.length
+      ? times.map(time => `<span class="pdf-level-time">✓ ${time}</span>`).join("")
+      : "—";
+    return `<tr><td class="label">${pdfTextOrDash(lvl.level_name)}</td><td class="pdf-level-times-cell">${timesHTML}</td></tr>`;
   }).join("");
 
   return `
           <table class="pdf-table pdf-level-checks-table" data-pdf-block>
-            <tr>
-              <td class="label">Level</td><td class="label">Check 1</td><td class="label">Check 2</td>
-              <td class="label">Check 3</td><td class="label">Check 4</td><td class="label">Check 5</td>
-              <td class="label">Check 6</td>
-            </tr>${rows}
+            <tr><td class="label">Level</td><td class="label">Inspection Times</td></tr>${rows}
           </table>`;
 }
 
@@ -803,15 +810,15 @@ function waitForImages(container){
 }
 
 async function populatePdfTemplate(report){
- pdfSetText("pdf_shift_date", report.shift_date);
-pdfSetText("pdf_shift_type", report.shift_type);
-pdfSetText("pdf_paste_runner_top", report.paste_runner);
-pdfSetText("pdf_operator_table", report.operator);
-pdfSetText("pdf_operator_submission", report.operator);
-pdfSetText("pdf_shift_boss", report.shift_boss);
-pdfSetText("pdf_plant_operator", report.plant_operator);
-pdfSetText("pdf_paste_runner", report.paste_runner);
-pdfSetText("pdf_generated_at", new Date().toLocaleString());
+  pdfSetText("pdf_shift_date", report.shift_date);
+  pdfSetText("pdf_shift_type", report.shift_type);
+  pdfSetText("pdf_paste_runner_top", report.paste_runner);
+  pdfSetText("pdf_operator_table", report.operator);
+  pdfSetText("pdf_operator_submission", report.operator);
+  pdfSetText("pdf_shift_boss", report.shift_boss);
+  pdfSetText("pdf_plant_operator", report.plant_operator);
+  pdfSetText("pdf_paste_runner", report.paste_runner);
+  pdfSetText("pdf_generated_at", new Date().toLocaleString());
 
   const stopesContainer = document.getElementById("pdfStopesContainer");
   stopesContainer.innerHTML = (report.stopes || [])
