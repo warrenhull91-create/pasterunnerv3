@@ -874,7 +874,11 @@ async function buildPdfBlob(){
     windowWidth: template.scrollWidth,
     windowHeight: template.scrollHeight
   });
-
+document.body.appendChild(canvas);
+canvas.style.position = "fixed";
+canvas.style.top = "0";
+canvas.style.left = "0";
+canvas.style.zIndex = "999999";
   if(!canvas || canvas.width === 0 || canvas.height === 0){
     throw new Error("PDF capture produced an empty canvas.");
   }
