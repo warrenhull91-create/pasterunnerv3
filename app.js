@@ -1,4 +1,4 @@
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYKopfIXlyWsICDxeg5kV4GM3JQ8g-e7rHp0Kzt8Mzzj1mbmktBlv2FOf7gBEfSwwwOQ/exec";
+const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4VRXtlVHZ6X31aMlOg8IXXgCexVoeiKhRmVcGz43c-VURMcDf-4ocrPi6RmbYjHaL5w/exec";
 
 function val(id){ return document.getElementById(id)?.value?.trim() || ""; }
 
