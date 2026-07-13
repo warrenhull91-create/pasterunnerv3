@@ -1002,7 +1002,7 @@ async function submitReport(isTest=false){
     }
 
     console.log("[PDF] Attachment successfully passed to submission function. Drive PDF:", data.url);
-    setStatus(setStatus("good", "Submitted successfully. PDF saved to Google Drive.");
+    setStatus("good", "Submitted successfully. PDF saved to Google Drive.");
   } catch(err){
     setStatus("bad", "Failed: " + err.message);
     console.error("[PDF] Submission failed:", err);
