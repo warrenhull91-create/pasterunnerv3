@@ -803,15 +803,15 @@ function waitForImages(container){
 }
 
 async function populatePdfTemplate(report){
-  pdfSetText("pdf_shift_date", report.shift_date);
-  pdfSetText("pdf_shift_type", report.shift_type);
-  pdfSetText("pdf_paste_runner_top", report.paste_runner);
-  pdfSetText("pdf_operator_table", report.operator);
-  pdfSetText("pdf_operator_submission", report.operator);
-  pdfSetText("pdf_shift_boss", report.shift_boss);
-  pdfSetText("pdf_plant_operator", report.plant_operator);
-  pdfSetText("pdf_paste_runner", report.paste_runner);
-  pdfSetText("pdf_generated_at", new Date().toLocaleString());
+ pdfSetText("pdf_shift_date", report.shift_date);
+pdfSetText("pdf_shift_type", report.shift_type);
+pdfSetText("pdf_paste_runner_top", report.paste_runner);
+pdfSetText("pdf_operator_table", report.operator);
+pdfSetText("pdf_operator_submission", report.operator);
+pdfSetText("pdf_shift_boss", report.shift_boss);
+pdfSetText("pdf_plant_operator", report.plant_operator);
+pdfSetText("pdf_paste_runner", report.paste_runner);
+pdfSetText("pdf_generated_at", new Date().toLocaleString());
 
   const stopesContainer = document.getElementById("pdfStopesContainer");
   stopesContainer.innerHTML = (report.stopes || [])
