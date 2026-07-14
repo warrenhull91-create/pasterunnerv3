@@ -1248,15 +1248,44 @@ async function submitReport(isTest=false){
 
     setStatus("busy", "Submitting shift sheet...");
 
+    const requestBody = JSON.stringify({ report, pdf_base64: pdfBase64 });
+    const isIOSStandalone =
+      window.navigator.standalone === true ||
+      (
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches &&
+        /iPad|iPhone|iPod/i.test(navigator.userAgent)
+      );
+
+    if(isIOSStandalone){
+      // iPhone/iPad Home Screen apps can fail while reading the redirected
+      // Google Apps Script response even though the POST itself is accepted.
+      // no-cors allows the upload to complete, but the response is opaque.
+      await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: requestBody
+      });
+
+      console.log("[PDF] iOS Home Screen upload sent using no-cors mode.");
+      setStatus("good", "Submitted. PDF sent to Google Drive.");
+      return;
+    }
+
     const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ report, pdf_base64: pdfBase64 })
+      body: requestBody
     });
 
-    const text = await response.text();
+    const responseText = await response.text();
     let data;
-    try { data = JSON.parse(text); } catch(e) { data = { success:false, error:text }; }
+    try {
+      data = JSON.parse(responseText);
+    } catch(e) {
+      data = { success:false, error:responseText };
+    }
 
     if(!data.success){
       console.error("[PDF] Submission function reported failure:", data.error);
