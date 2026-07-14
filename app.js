@@ -1002,6 +1002,215 @@ function blobToBase64(blob){
   });
 }
 
+
+/* ============================================================
+   LOCAL DRAFT SAVE / RESTORE
+   Saves the current report on this device so the user can leave
+   the app and return without losing their entered shift data.
+   Issue photos are not stored in the draft because browser
+   storage limits on iPhone/iPad can be exceeded very quickly.
+   ============================================================ */
+
+const DRAFT_STORAGE_KEY = "pasteRunnerDraftV1";
+let draftSaveTimer = null;
+let isRestoringDraft = false;
+
+function buildDraftData(){
+  const report = collectReport(false);
+
+  // Avoid storing large Base64 photo data in localStorage.
+  (report.stopes || []).forEach(stope => {
+    CHECKLIST_ITEMS.forEach(({ key }) => {
+      delete stope[`${key}_photos`];
+    });
+  });
+
+  return {
+    savedAt: new Date().toISOString(),
+    report
+  };
+}
+
+function saveDraft(showMessage=false){
+  if(isRestoringDraft) return;
+
+  try{
+    const draft = buildDraftData();
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+
+    if(showMessage){
+      const savedTime = new Date(draft.savedAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      setStatus("good", `Draft saved on this device at ${savedTime}.`);
+    }
+  } catch(err){
+    console.error("[DRAFT] Save failed:", err);
+    if(showMessage){
+      setStatus("bad", "Draft could not be saved on this device.");
+    }
+  }
+}
+
+function scheduleDraftSave(){
+  if(isRestoringDraft) return;
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => saveDraft(false), 500);
+}
+
+function setCardField(card, field, value){
+  const el = card.querySelector(`[data-field="${field}"]`);
+  if(el) el.value = value === undefined || value === null ? "" : String(value);
+}
+
+function setStatusButtonState(card, value){
+  setCardField(card, "status", value || "");
+  card.querySelectorAll(".status-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.value === value);
+  });
+  const otherWrap = card.querySelector("[data-status-other-wrap]");
+  if(otherWrap) otherWrap.classList.toggle("show", value === "Other");
+}
+
+function setHotseatButtonState(card, field, value){
+  setCardField(card, field, value || "");
+  card.querySelectorAll(`.hotseat-btn[data-hotseat-field="${field}"]`).forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.value === value);
+  });
+}
+
+function setChecklistState(card, key, value, issue){
+  setCardField(card, key, value || "");
+  setCardField(card, `${key}_issue`, issue || "");
+
+  const btn = card.querySelector(`.checklist-cycle-btn[data-field="${key}"]`);
+  if(btn){
+    const meta = checklistCycleMeta(value || "");
+    btn.textContent = `${meta.icon} ${meta.label}`;
+    btn.className = "checklist-cycle-btn " + meta.cls;
+
+    const row = btn.closest(".checklist-row");
+    const issueWrap = row ? row.querySelector(".issue-details-wrap") : null;
+    const isIssue = value === "Requires Attention";
+    if(row) row.classList.toggle("issue-active", isIssue);
+    if(issueWrap) issueWrap.classList.toggle("show", isIssue);
+  }
+}
+
+function restoreDraft(){
+  const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+  if(!raw) return false;
+
+  let draft;
+  try{
+    draft = JSON.parse(raw);
+  } catch(err){
+    console.error("[DRAFT] Invalid saved draft:", err);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    return false;
+  }
+
+  const report = draft && draft.report;
+  if(!report) return false;
+
+  isRestoringDraft = true;
+
+  try{
+    document.getElementById("shift_date").value = report.shift_date || new Date().toISOString().slice(0,10);
+    document.getElementById("shift_type").value = report.shift_type || "D/S";
+    document.getElementById("operator").value = report.operator || "";
+    document.getElementById("shift_boss").value = report.shift_boss || "";
+    document.getElementById("plant_operator").value = report.plant_operator || "";
+    document.getElementById("paste_runner").value = report.paste_runner || "";
+
+    const stopesContainer = document.getElementById("stopesContainer");
+    stopesContainer.innerHTML = "";
+
+    (report.stopes || []).forEach(stope => {
+      addStope();
+      const cards = stopesContainer.querySelectorAll(".stope-card");
+      const card = cards[cards.length - 1];
+
+      setCardField(card, "stope_name", stope.stope_name);
+      updateStopeHeading(card);
+      setStatusButtonState(card, stope.status);
+      setCardField(card, "status_other_comments", stope.status_other_comments);
+      setCardField(card, "fill_point", stope.fill_point);
+      setCardField(card, "total_m3", stope.total_m3);
+      setCardField(card, "plug_m3", stope.plug_m3);
+      setCardField(card, "poured_m3", stope.poured_m3);
+      setHotseatButtonState(card, "plug_complete", stope.plug_complete);
+      setCardField(card, "time_start", stope.time_start);
+      setHotseatButtonState(card, "hot_seating_start", stope.hot_seating_start);
+      setCardField(card, "time_pour_finished", stope.time_pour_finished);
+      setHotseatButtonState(card, "hot_seating_pour_finished", stope.hot_seating_pour_finished);
+      setCardField(card, "delays", stope.delays);
+      setCardField(card, "general_notes", stope.general_notes);
+
+      const flushEntries = Array.isArray(stope.flush_entries) && stope.flush_entries.length
+        ? stope.flush_entries
+        : [{ time: "", comments: "" }];
+
+      while(card.querySelectorAll(".flush-time-row").length < flushEntries.length){
+        addFlushRow(card);
+      }
+
+      Array.from(card.querySelectorAll(".flush-time-row")).forEach((row, idx) => {
+        const entry = flushEntries[idx] || {};
+        const timeEl = row.querySelector('[data-field="flush_time"]');
+        const commentsEl = row.querySelector('[data-field="flush_comments"]');
+        if(timeEl) timeEl.value = entry.time || "";
+        if(commentsEl) commentsEl.value = entry.comments || "";
+      });
+
+      const levelChecks = Array.isArray(stope.level_checks) && stope.level_checks.length
+        ? stope.level_checks
+        : [{ level_name: "", checks: [] }];
+
+      while(card.querySelectorAll(".level-entry").length < levelChecks.length){
+        addLevelEntry(card);
+      }
+
+      Array.from(card.querySelectorAll(".level-entry")).forEach((entryEl, idx) => {
+        const level = levelChecks[idx] || {};
+        const nameEl = entryEl.querySelector('[data-field="level_name"]');
+        if(nameEl) nameEl.value = level.level_name || "";
+
+        (level.checks || []).forEach(check => {
+          const n = check.check_number;
+          const checkbox = entryEl.querySelector(`[data-check-num="${n}"]`);
+          const timeEl = entryEl.querySelector(`[data-field="check_${n}_time"]`);
+          const display = entryEl.querySelector(`[data-check-time="${n}"]`);
+          const label = checkbox ? checkbox.closest(".level-check-box") : null;
+
+          if(checkbox) checkbox.checked = !!check.checked;
+          if(timeEl) timeEl.value = check.time || "";
+          if(display) display.textContent = check.checked ? (check.time || "—") : "—";
+          if(label) label.classList.toggle("checked-visual", !!check.checked);
+        });
+      });
+
+      CHECKLIST_ITEMS.forEach(({ key }) => {
+        setChecklistState(card, key, stope[key], stope[`${key}_issue`]);
+      });
+    });
+
+    const savedLabel = draft.savedAt
+      ? new Date(draft.savedAt).toLocaleString()
+      : "an earlier time";
+    setStatus("good", `Draft restored from ${savedLabel}.`);
+    return true;
+  } catch(err){
+    console.error("[DRAFT] Restore failed:", err);
+    setStatus("bad", "A saved draft was found but could not be restored.");
+    return false;
+  } finally {
+    isRestoringDraft = false;
+  }
+}
+
+
 /* ============================================================
    SUBMIT FLOW
    Same fetch target and payload shape as before. Debug logging
@@ -1012,7 +1221,7 @@ function blobToBase64(blob){
 
 async function submitReport(isTest=false){
   try{
-    setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
+    setStatus("busy", "Submitting shift sheet...");
     const report = collectReport(isTest);
     console.log("[PDF] Form data collected:", {
       shift_date: report.shift_date,
@@ -1037,7 +1246,7 @@ async function submitReport(isTest=false){
 
     const pdfBase64 = await blobToBase64(pdfBlob);
 
-    setStatus("busy", isTest ? "Sending test..." : "Submitting shift sheet...");
+    setStatus("busy", "Submitting shift sheet...");
 
     const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: "POST",
@@ -1065,11 +1274,25 @@ async function submitReport(isTest=false){
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("shift_date").value = new Date().toISOString().slice(0,10);
   document.getElementById("submitBtn").addEventListener("click", () => submitReport(false));
-  document.getElementById("testBtn").addEventListener("click", () => submitReport(true));
+  document.getElementById("saveBtn").addEventListener("click", () => saveDraft(true));
   document.getElementById("addStopeBtn").addEventListener("click", () => addStope());
 
   initStopesContainerEvents();
-  // No stope card is seeded — the form opens with zero stopes.
-  // Each stope card (once added) starts with its own default
-  // Time of Flush row and Level Check row.
+
+  // Automatically save ordinary form changes after a short pause.
+  document.addEventListener("input", scheduleDraftSave);
+  document.addEventListener("change", scheduleDraftSave);
+  document.addEventListener("click", (e) => {
+    if(e.target.closest(
+      ".status-btn, .hotseat-btn, .checklist-cycle-btn, .add-flush-btn, " +
+      ".remove-flush-btn, [data-add-level-entry], [data-remove-level-entry], " +
+      ".remove-stope-btn, #addStopeBtn"
+    )){
+      scheduleDraftSave();
+    }
+  });
+
+  window.addEventListener("beforeunload", () => saveDraft(false));
+
+  restoreDraft();
 });
