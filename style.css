@@ -1375,8 +1375,9 @@ textarea{
 
 .pdf-issue-photo{
   width: 100%;
-  height: 150px;
-  object-fit: cover;
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
   display: block;
   border: 1px solid #d4d7da;
   border-radius: 5px;

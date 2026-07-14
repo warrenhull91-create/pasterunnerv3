@@ -224,7 +224,7 @@ function renumberFlushRows(card){
 
 /* ---------------- PHOTO CAPTURE + COMPRESSION ---------------- */
 
-function compressImageFile(file, maxDim = 1000, quality = 0.6){
+function compressImageFile(file, maxDim = 2200, quality = 0.9){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -889,11 +889,15 @@ async function buildPdfBlob(){
   // element's offset parent, which caused issue-photo cards to be split and
   // partially repeated across pages.
   const templateRect = template.getBoundingClientRect();
-  const blockBoundaries = Array.from(template.querySelectorAll("[data-pdf-block]"))
-    .map(el => el.getBoundingClientRect().top - templateRect.top)
-    .filter(y => Number.isFinite(y) && y > 0)
-    .sort((a, b) => a - b)
-    .filter((y, idx, arr) => idx === 0 || Math.abs(y - arr[idx - 1]) > 1);
+  // Measure complete PDF blocks before capture. These ranges are used to
+  // move a block to the next page when a normal page cut would split it.
+  const protectedBlocksCss = Array.from(template.querySelectorAll("[data-pdf-block]"))
+    .map(el => ({
+      top: el.offsetTop,
+      bottom: el.offsetTop + el.offsetHeight
+    }))
+    .filter(block => block.bottom > block.top)
+    .sort((a, b) => a.top - b.top);
 
   const canvas = await html2canvas(template, {
     scale: 2,
@@ -914,56 +918,77 @@ async function buildPdfBlob(){
 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  const imgData = canvas.toDataURL("image/png");
-
+  const footerSpacePt = 26;
+  const usablePageHeightPt = pageHeight - footerSpacePt;
   const canvasPxPerCssPx = canvas.width / template.scrollWidth;
-  const pageHeightInCanvasPx = pageHeight * (canvas.width / imgWidth);
-  const boundariesInCanvasPx = blockBoundaries
-    .map(y => y * canvasPxPerCssPx)
-    .filter(y => y > 0 && y < canvas.height);
+  const canvasPxPerPt = canvas.width / pageWidth;
+  const maxPageSlicePx = usablePageHeightPt * canvasPxPerPt;
 
-  function nextSafeBreak(currentY){
-    const naiveBreak = currentY + pageHeightInCanvasPx;
-    if(naiveBreak >= canvas.height) return canvas.height;
-    let best = null;
-    for(const boundary of boundariesInCanvasPx){
-      if(boundary > currentY && boundary <= naiveBreak){
-        best = boundary;
-      } else if(boundary > naiveBreak){
-        break;
-      }
+  const protectedBlocks = protectedBlocksCss.map(block => ({
+    top: block.top * canvasPxPerCssPx,
+    bottom: block.bottom * canvasPxPerCssPx
+  }));
+
+  function choosePageEnd(pageStart){
+    const naiveEnd = Math.min(pageStart + maxPageSlicePx, canvas.height);
+    if(naiveEnd >= canvas.height) return canvas.height;
+
+    // Find any protected block crossed by the proposed page boundary.
+    // If that block can fit on a fresh page, break immediately before it.
+    const crossing = protectedBlocks.find(block =>
+      block.top > pageStart + 1 &&
+      block.top < naiveEnd &&
+      block.bottom > naiveEnd
+    );
+
+    if(crossing && (crossing.bottom - crossing.top) <= maxPageSlicePx){
+      return crossing.top;
     }
-    // No safe boundary fits on this page (a single block taller than one
-    // page) — fall back to the naive cut rather than looping forever.
-    return best || naiveBreak;
+
+    return naiveEnd;
   }
 
-  const pageBreaksCanvasPx = [];
-  let cursor = 0;
-  while(cursor < canvas.height){
-    const next = nextSafeBreak(cursor);
-    pageBreaksCanvasPx.push(next);
-    cursor = next;
-  }
-
-  const totalPages = pageBreaksCanvasPx.length;
-
+  const pageRanges = [];
   let pageStart = 0;
-  pageBreaksCanvasPx.forEach((pageEnd, idx) => {
+  while(pageStart < canvas.height - 1){
+    let pageEnd = choosePageEnd(pageStart);
+
+    // Safety guard against a zero-height page caused by rounding.
+    if(pageEnd <= pageStart + 1){
+      pageEnd = Math.min(pageStart + maxPageSlicePx, canvas.height);
+    }
+
+    pageRanges.push({ start: Math.round(pageStart), end: Math.round(pageEnd) });
+    pageStart = pageEnd;
+  }
+
+  const totalPages = pageRanges.length;
+
+  pageRanges.forEach((range, idx) => {
     if(idx > 0) pdf.addPage();
-    const offsetPt = -(pageStart * (imgWidth / canvas.width));
-    pdf.addImage(imgData, "PNG", 0, offsetPt, imgWidth, imgHeight);
+
+    const sliceHeight = Math.max(1, range.end - range.start);
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = sliceHeight;
+
+    const ctx = pageCanvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+    ctx.drawImage(
+      canvas,
+      0, range.start, canvas.width, sliceHeight,
+      0, 0, canvas.width, sliceHeight
+    );
+
+    const sliceHeightPt = sliceHeight / canvasPxPerPt;
+    const pageImage = pageCanvas.toDataURL("image/jpeg", 0.96);
+    pdf.addImage(pageImage, "JPEG", 0, 0, pageWidth, sliceHeightPt, undefined, "FAST");
 
     pdf.setFontSize(8);
     pdf.setTextColor(120, 120, 120);
-    pdf.text(`Page ${idx + 1} of ${totalPages}`, pageWidth - 40, pageHeight - 16, { align: "right" });
-
-    pageStart = pageEnd;
+    pdf.text(`Page ${idx + 1} of ${totalPages}`, pageWidth - 40, pageHeight - 12, { align: "right" });
   });
-
-  console.log("[PDF] Paginated into", totalPages, "page(s)");
 
   return { blob: pdf.output("blob"), pageCount: totalPages };
 }
