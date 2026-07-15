@@ -695,9 +695,11 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>`).join("");
 
   const flushSection = flushEntries.length ? `
-          <div class="pdf-checklist-title" data-pdf-block>Time of Flush</div>
-          <table class="pdf-table pdf-metrics-table pdf-compact-table" data-pdf-block>${flushRows}
-          </table>` : "";
+          <div class="pdf-protected-section" data-pdf-block>
+            <div class="pdf-checklist-title">Time of Flush</div>
+            <table class="pdf-table pdf-metrics-table pdf-compact-table">${flushRows}
+            </table>
+          </div>` : "";
 
   const heading = stope.stope_name ? escapeHtml(stope.stope_name.toUpperCase()) : "NEW STOPE";
   const isOtherType = stope.status === "Other";
@@ -715,7 +717,10 @@ function buildPdfStopeCardHTML(stope, n){
           </div>` : "";
 
   const commentsSection = (delaysBlock || notesBlock) ? `
-          <div class="pdf-checklist-title" data-pdf-block>Comments</div>${delaysBlock}${notesBlock}` : "";
+          <div class="pdf-protected-section" data-pdf-block>
+            <div class="pdf-checklist-title">Comments</div>
+            ${delaysBlock}${notesBlock}
+          </div>` : "";
 
   const timeRows = [];
   if ((stope.time_start || "").trim() || (stope.hot_seating_start || "").trim()) {
@@ -733,9 +738,11 @@ function buildPdfStopeCardHTML(stope, n){
             </tr>`);
   }
   const timesSection = timeRows.length ? `
-          <div class="pdf-checklist-title" data-pdf-block>Times</div>
-          <table class="pdf-table pdf-metrics-table pdf-compact-table" data-pdf-block>${timeRows.join("")}
-          </table>` : "";
+          <div class="pdf-protected-section" data-pdf-block>
+            <div class="pdf-checklist-title">Times</div>
+            <table class="pdf-table pdf-metrics-table pdf-compact-table">${timeRows.join("")}
+            </table>
+          </div>` : "";
 
   const levelChecksSection = buildPdfLevelChecksTableHTML(stope.level_checks);
 
@@ -776,12 +783,18 @@ function buildPdfStopeCardHTML(stope, n){
           ${timesSection}
           ${flushSection}
 
-          <div class="pdf-checklist-title" data-pdf-block>Stope Checklist</div>
-          <div class="pdf-checklist-compact">${checklistRows}</div>
+          <div class="pdf-protected-section" data-pdf-block>
+            <div class="pdf-checklist-title">Stope Checklist</div>
+            <div class="pdf-checklist-compact">${checklistRows}</div>
+          </div>
 
           ${issuesSection}
 
-          ${levelChecksSection ? `<div class="pdf-checklist-title" data-pdf-block>Level Checks</div>${levelChecksSection}` : ""}
+          ${levelChecksSection ? `
+          <div class="pdf-protected-section pdf-level-checks-section" data-pdf-block>
+            <div class="pdf-checklist-title">Level Checks</div>
+            ${levelChecksSection}
+          </div>` : ""}
 
           ${commentsSection}
         </div>`;
@@ -806,7 +819,7 @@ function buildPdfLevelChecksTableHTML(levelChecks){
   }).join("");
 
   return `
-          <table class="pdf-table pdf-level-checks-table" data-pdf-block>
+          <table class="pdf-table pdf-level-checks-table">
             <tr><td class="label">Level</td><td class="label">Inspection Times</td></tr>${rows}
           </table>`;
 }
