@@ -1390,3 +1390,70 @@ textarea{
 .pdf-photo-thumb{
   display: none !important;
 }
+
+
+/* ============================================================
+   PDF SECTION CARDS — Level Checks and Comments
+   Separate cards remove the appearance of one oversized stope
+   box continuing onto the following page.
+   ============================================================ */
+
+.pdf-stope-group{
+  margin: 0 0 16px;
+}
+
+.pdf-stope-group > .pdf-stope-card{
+  margin-bottom: 12px;
+}
+
+.pdf-section-card{
+  margin: 0 0 12px;
+  border: 1.5px solid #22272d;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.pdf-card-header{
+  padding: 9px 12px;
+  background: #f1f3f4;
+  border-left: 4px solid #ffcc00;
+  border-bottom: 1px solid #dcdfe2;
+  color: #22272d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.pdf-card-body{
+  padding: 10px 12px 12px;
+}
+
+.pdf-section-card .pdf-level-checks-table{
+  width: 100%;
+  margin: 0;
+}
+
+.pdf-section-card .pdf-comments-inline{
+  margin: 0;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid #eceeef;
+}
+
+.pdf-section-card .pdf-comments-inline:last-child{
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.pdf-section-card .pdf-comments-label{
+  margin-bottom: 6px;
+  color: #6b7680;
+  font-weight: 800;
+}
+
+.pdf-level-card,
+.pdf-comments-card{
+  break-inside: avoid;
+  page-break-inside: avoid;
+}

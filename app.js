@@ -705,13 +705,13 @@ function buildPdfStopeCardHTML(stope, n){
   const isOtherType = stope.status === "Other";
 
   const delaysBlock = (stope.delays || "").trim() ? `
-          <div class="pdf-comments-inline" data-pdf-block>
+          <div class="pdf-comments-inline">
             <span class="pdf-comments-label">Delays</span>
             <span>${pdfTextOrDash(stope.delays)}</span>
           </div>` : "";
 
   const notesBlock = (stope.general_notes || "").trim() ? `
-          <div class="pdf-comments-inline" data-pdf-block>
+          <div class="pdf-comments-inline">
             <span class="pdf-comments-label">General Notes</span>
             <span>${pdfTextOrDash(stope.general_notes)}</span>
           </div>` : "";
@@ -747,56 +747,66 @@ function buildPdfStopeCardHTML(stope, n){
   const levelChecksSection = buildPdfLevelChecksTableHTML(stope.level_checks);
 
   return `
-        <div class="pdf-stope-card">
-          <div class="pdf-stope-head" data-pdf-block>
-            <h3>STOPE — ${heading}</h3>
-            <span class="pdf-stope-id">Stope Entry ${n}</span>
+        <div class="pdf-stope-group">
+          <div class="pdf-stope-card">
+            <div class="pdf-stope-head" data-pdf-block>
+              <h3>STOPE — ${heading}</h3>
+              <span class="pdf-stope-id">Stope Entry ${n}</span>
+            </div>
+
+            <div class="pdf-checklist-title" data-pdf-block>Stope Details</div>
+            <table class="pdf-table pdf-metrics-table" data-pdf-block>
+              <tr>
+                <td class="label">Stope Type</td><td>${pdfPillHTML(stope.status, "Not Set")}</td>
+                <td class="label"></td><td></td>
+              </tr>${isOtherType ? `
+              <tr>
+                <td class="label">Stope Type Description</td><td colspan="3">${pdfTextOrDash(stope.status_other_comments)}</td>
+              </tr>` : ""}
+            </table>
+
+            <div class="pdf-checklist-title" data-pdf-block>Pour and Plug Details</div>
+            <table class="pdf-table pdf-metrics-table" data-pdf-block>
+              <tr>
+                <td class="label">Level of Fill Point</td><td>${pdfTextOrDash(stope.fill_point)}</td>
+                <td class="label">Plug m³</td><td>${pdfTextOrDash(stope.plug_m3)}</td>
+              </tr>
+              <tr>
+                <td class="label">Total m³</td><td>${pdfTextOrDash(stope.total_m3)}</td>
+                <td class="label">Poured m³</td><td>${pdfTextOrDash(stope.poured_m3)}</td>
+              </tr>
+              <tr>
+                <td class="label">Plug Complete</td><td>${pdfPillHTML(stope.plug_complete, "Not Set")}</td>
+                <td class="label"></td><td></td>
+              </tr>
+            </table>
+
+            ${timesSection}
+            ${flushSection}
+
+            <div class="pdf-protected-section" data-pdf-block>
+              <div class="pdf-checklist-title">Stope Checklist</div>
+              <div class="pdf-checklist-compact">${checklistRows}</div>
+            </div>
+
+            ${issuesSection}
           </div>
-
-          <div class="pdf-checklist-title" data-pdf-block>Stope Details</div>
-          <table class="pdf-table pdf-metrics-table" data-pdf-block>
-            <tr>
-              <td class="label">Stope Type</td><td>${pdfPillHTML(stope.status, "Not Set")}</td>
-              <td class="label"></td><td></td>
-            </tr>${isOtherType ? `
-            <tr>
-              <td class="label">Stope Type Description</td><td colspan="3">${pdfTextOrDash(stope.status_other_comments)}</td>
-            </tr>` : ""}
-          </table>
-
-          <div class="pdf-checklist-title" data-pdf-block>Pour and Plug Details</div>
-          <table class="pdf-table pdf-metrics-table" data-pdf-block>
-            <tr>
-              <td class="label">Level of Fill Point</td><td>${pdfTextOrDash(stope.fill_point)}</td>
-              <td class="label">Plug m³</td><td>${pdfTextOrDash(stope.plug_m3)}</td>
-            </tr>
-            <tr>
-              <td class="label">Total m³</td><td>${pdfTextOrDash(stope.total_m3)}</td>
-              <td class="label">Poured m³</td><td>${pdfTextOrDash(stope.poured_m3)}</td>
-            </tr>
-            <tr>
-              <td class="label">Plug Complete</td><td>${pdfPillHTML(stope.plug_complete, "Not Set")}</td>
-              <td class="label"></td><td></td>
-            </tr>
-          </table>
-
-          ${timesSection}
-          ${flushSection}
-
-          <div class="pdf-protected-section" data-pdf-block>
-            <div class="pdf-checklist-title">Stope Checklist</div>
-            <div class="pdf-checklist-compact">${checklistRows}</div>
-          </div>
-
-          ${issuesSection}
 
           ${levelChecksSection ? `
-          <div class="pdf-protected-section pdf-level-checks-section" data-pdf-block>
-            <div class="pdf-checklist-title">Level Checks</div>
-            ${levelChecksSection}
+          <div class="pdf-section-card pdf-level-card" data-pdf-block>
+            <div class="pdf-card-header">Level Checks</div>
+            <div class="pdf-card-body">
+              ${levelChecksSection}
+            </div>
           </div>` : ""}
 
-          ${commentsSection}
+          ${(delaysBlock || notesBlock) ? `
+          <div class="pdf-section-card pdf-comments-card" data-pdf-block>
+            <div class="pdf-card-header">Comments</div>
+            <div class="pdf-card-body">
+              ${delaysBlock}${notesBlock}
+            </div>
+          </div>` : ""}
         </div>`;
 }
 
